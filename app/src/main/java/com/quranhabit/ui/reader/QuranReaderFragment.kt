@@ -42,29 +42,35 @@ class QuranReaderFragment : Fragment() {
         val surahNumber = arguments?.getInt("surahNumber") ?: 1
 
         // Load and display the surah
-        displaySurah(surahNumber)
+        displayFirstPageOfSurah(surahNumber)
     }
 
-    private fun displaySurah(surahNumber: Int) {
-        val ayahs = getAyahsForSurah(surahNumber)
-        ayahs.forEach { ayah ->
+    private fun displayFirstPageOfSurah(surahNumber: Int) {
+        val firstPageAyahs = getFirstPageAyahsForSurah(surahNumber)
+        firstPageAyahs.forEach { ayah ->
             addAyahToContainer(ayah)
         }
     }
 
-    private fun getAyahsForSurah(surahNumber: Int): List<Ayah> {
-        val ranges = cachedPages
-            .flatten()
-            .flatten()
-            .filter { it.surah == surahNumber }
+    private fun getFirstPageAyahsForSurah(surahNumber: Int): List<Ayah> {
+        // Get all pages
+        val allPages = cachedPages.flatten()
+
+        // Find the first page that contains this surah
+        val firstPageWithSurah = allPages.firstOrNull { page ->
+            page.any { range -> range.surah == surahNumber }
+        } ?: return emptyList()
+
+        // Get all ranges for this surah in the first page
+        val surahRanges = firstPageWithSurah.filter { it.surah == surahNumber }
 
         val quranLines = loadTextFromRaw(R.raw.quran_uthmani).lines()
 
-        return ranges.flatMap { range ->
+        return surahRanges.flatMap { range ->
             (range.start..range.end).map { lineNumber ->
                 Ayah(
                     surahNumber = surahNumber,
-                    ayahNumber = lineNumber - ranges.first().start + 1,
+                    ayahNumber = lineNumber - getFirstLineNumberForSurah(surahNumber) + 1,
                     text = quranLines[lineNumber - 1]
                 )
             }

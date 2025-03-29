@@ -1,3 +1,7 @@
 package com.quranhabit.ui.surah
 
-data class Surah(val number: Int, val name: String)
+data class Surah(
+    val number: Int,
+    val englishName: String,
+    val arabicName: String
+)

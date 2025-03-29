@@ -1,26 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:background="@color/primary_dark"
-    android:layout_marginBottom="4dp"
-    android:paddingBottom="12dp"
-    android:padding="16dp">
+    android:orientation="horizontal"
+    android:padding="16dp"
+    android:background="@color/ayah_background">
 
+    <!-- English Name (Left) -->
     <TextView
-        android:id="@+id/surahNameTextView"
-        android:layout_width="wrap_content"
+        android:id="@+id/englishNameTextView"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:textColor="@android:color/white" />
+        android:layout_weight="1"
+        android:textSize="20sp"
+        android:textColor="@color/text_primary"
+        tools:text="Al-Fatihah" />
 
+    <!-- Arabic Name (Right) -->
     <TextView
-        android:id="@+id/surahNumberTextView"
-        android:layout_width="wrap_content"
+        android:id="@+id/arabicNameTextView"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textSize="14sp"
-        android:textColor="@android:color/white" />
+        android:layout_weight="1"
+        android:textSize="32sp"
+        android:textColor="@color/text_primary"
+        android:textDirection="rtl"
+        android:gravity="end"
+        tools:text="الفاتحة" />
 
 </LinearLayout>
