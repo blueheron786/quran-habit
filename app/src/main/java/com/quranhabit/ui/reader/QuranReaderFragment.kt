@@ -61,13 +61,14 @@ class QuranReaderFragment : Fragment() {
         allPages = cachedPages.flatten()
         quranLines = loadTextFromRaw(R.raw.quran_uthmani).lines()
 
-        setupViewPager()
+        val initialPage = findFirstPageForSurah(currentSurahNumber)
+        setupViewPager(initialPage)
+        updateHeader(initialPage)
     }
 
-    private fun setupViewPager() {
-        // Remove the .reversed() - we'll handle RTL differently
+    private fun setupViewPager(initialPage: Int) {
         pageAdapter = QuranPageAdapter(
-            allPages = allPages,  // Use original order
+            allPages = allPages, // original order
             arabicTypeface = arabicTypeface,
             quranLines = quranLines,
             onAyahMarked = { surahNumber, ayahNumber ->
@@ -76,15 +77,10 @@ class QuranReaderFragment : Fragment() {
             getFirstLineNumber = ::getFirstLineNumberForSurah
         )
 
-        // Configure ViewPager2 for RTL
         binding.quranPager.adapter = pageAdapter
         binding.quranPager.layoutDirection = View.LAYOUT_DIRECTION_RTL
-
-        // Set initial page (no position conversion needed)
-        val initialPage = findFirstPageForSurah(currentSurahNumber)
         binding.quranPager.setCurrentItem(initialPage, false)
 
-        // Update page change listener
         binding.quranPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 updateHeader(position)
@@ -94,23 +90,15 @@ class QuranReaderFragment : Fragment() {
     }
 
     private fun updateHeader(rtlPosition: Int) {
-        // Convert RTL position back to logical position for data lookup
-        val actualPosition = allPages.size - 1 - rtlPosition
-        val currentSurah = getSurahForPage(actualPosition)
-
+        val currentSurah = getSurahForPage(rtlPosition)
         binding.surahInfoTextView.text = "${currentSurah.number}. ${currentSurah.englishName}"
-        binding.pageInfoTextView.text = "صفحة ${rtlPosition + 1}/${allPages.size}"
-
-        // Ensure RTL text direction
-        binding.surahInfoTextView.textDirection = View.TEXT_DIRECTION_RTL
-        binding.pageInfoTextView.textDirection = View.TEXT_DIRECTION_RTL
-        binding.pageInfoTextView.gravity = Gravity.END
+        binding.pageInfoTextView.text = "page ${rtlPosition + 1}/${allPages.size}"
     }
 
-    private fun getSurahForPage(pageIndex: Int): Surah {
-        val surahNumber = allPages[pageIndex].first().surah
+    private fun getSurahForPage(rtlPosition: Int): Surah {
+        val surahNumber = allPages[rtlPosition].first().surah
         return SurahRepository.getSurahByNumber(surahNumber) ?:
-        Surah(0, "Unknown", "غير معروف")
+        Surah(0, "Unknown", "???")
     }
 
     private fun findFirstPageForSurah(surahNumber: Int): Int {
