@@ -32,7 +32,9 @@ class SurahListFragment : Fragment() {
         surahAdapter = SurahAdapter(surahList) { surah ->
             findNavController().navigate(
                 R.id.action_surahListFragment_to_quranReaderFragment,
-                Bundle().apply { putInt("surahNumber", surah.number) }
+                Bundle().apply {
+                    putInt("surahNumber", surah.number)
+                }
             )
         }
 
