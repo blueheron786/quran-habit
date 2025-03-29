@@ -1,10 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <!-- Primary Theme Colors -->
+    <color name="primary">#0066CC</color>
+    <color name="primary_dark">#3700B3</color>
+    <color name="primary_light">#BB86FC</color>
+
+    <!-- Text Colors -->
+    <color name="text_primary">#FFFFFF</color>
+
+    <!-- Background Colors -->
+    <color name="background_dark">#00001E</color>
+    <color name="ayah_background">#000044</color>
+
+    <!-- Button Colors -->
+    <color name="button_primary">#4C50AF</color>
+    <color name="button_text">#FFFFFF</color>
+
+    <!-- Ayah Number Circle -->
+    <color name="ayah_number_bg">#4C50AF</color>
+    <color name="ayah_number_text">#FFFFFF</color>
 </resources>
