@@ -4,4 +4,5 @@
     android:id="@+id/surahRecyclerView"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@android:color/black"
     tools:listitem="@layout/item_surah" />
