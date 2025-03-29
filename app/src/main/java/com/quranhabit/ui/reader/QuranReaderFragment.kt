@@ -12,11 +12,11 @@ import com.google.gson.reflect.TypeToken
 import com.quranhabit.R
 
 class QuranReaderFragment : Fragment() {
-
     private lateinit var quranTextView: TextView
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         return inflater.inflate(R.layout.fragment_quran_reader, container, false)
@@ -26,12 +26,19 @@ class QuranReaderFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         quranTextView = view.findViewById(R.id.quranTextView)
-        val pageNumber = 107 // Replace with actual page number
-        val quranText = loadPageText(pageNumber)
-        quranTextView.text = quranText
 
-        val typeface = Typeface.createFromAsset(requireContext().assets, "fonts/KFGQPC Hafs.otf")
-        quranTextView.typeface = typeface
+        // Get surah number from arguments
+        val surahNumber = arguments?.getInt("surahNumber") ?: 1
+
+        // Load and display the surah
+        quranTextView.text = loadSurahText(surahNumber)
+
+        // Set Arabic font
+        quranTextView.typeface = Typeface.createFromAsset(
+            requireContext().assets,
+            "fonts/KFGQPC_Hafs.otf"
+        )
+        quranTextView.textDirection = View.TEXT_DIRECTION_RTL
     }
 
     private val cachedPages by lazy {
@@ -42,21 +49,23 @@ class QuranReaderFragment : Fragment() {
         )
     }
 
-    private fun loadPageText(pageNumber: Int): String {
+    private val quranLines by lazy {
+        loadTextFromRaw(R.raw.quran_uthmani).lines()
+    }
+
+    private fun loadSurahText(surahNumber: Int): String {
         return cachedPages
-            .getOrNull(pageNumber - 1)
-            ?.flatten()
-            ?.joinToString("\n") { range ->
-                quranLines.slice(range.start - 1 until range.end).joinToString("\n")
-            } ?: "Page not found"
+            .flatten() // Remove page grouping
+            .flatten() // Get all ranges
+            .filter { it.surah == surahNumber }
+            .flatMap { range ->
+                quranLines.slice(range.start - 1 until range.end)
+            }
+            .joinToString("\n")
     }
 
     private fun loadJsonFromRaw(resourceId: Int): String {
         return resources.openRawResource(resourceId).bufferedReader().use { it.readText() }
-    }
-
-    private val quranLines by lazy {
-        loadTextFromRaw(R.raw.quran_uthmani).lines()
     }
 
     private fun loadTextFromRaw(resourceId: Int): String {
@@ -64,4 +73,8 @@ class QuranReaderFragment : Fragment() {
     }
 }
 
-data class PageAyahRange(val surah: Int, val start: Int, val end: Int)
+data class PageAyahRange(
+    val surah: Int,
+    val start: Int,
+    val end: Int
+)

@@ -30,7 +30,6 @@ class SurahListFragment : Fragment() {
 
         val surahList = getSurahList()
         surahAdapter = SurahAdapter(surahList) { surah ->
-            // Manual navigation (no Directions class required)
             findNavController().navigate(
                 R.id.action_surahListFragment_to_quranReaderFragment,
                 Bundle().apply { putInt("surahNumber", surah.number) }
