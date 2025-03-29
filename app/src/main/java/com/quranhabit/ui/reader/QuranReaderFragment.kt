@@ -42,7 +42,7 @@ class QuranReaderFragment : Fragment() {
     }
 
     private val cachedPages by lazy {
-        val json = loadJsonFromRaw(R.raw.pages)
+        val json = loadJsonFromRaw(R.raw.pages_absolute)
         Gson().fromJson<List<List<List<PageAyahRange>>>>(
             json,
             object : TypeToken<List<List<List<PageAyahRange>>>>() {}.type
