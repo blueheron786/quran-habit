@@ -1,4 +1,4 @@
-package com.quranhabit.ui
+package com.quranhabit.ui.surah
 
 import android.view.LayoutInflater
 import android.view.View
@@ -16,7 +16,8 @@ class SurahAdapter(private val surahList: List<Surah>, private val onItemClick: 
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SurahViewHolder {
-        val itemView = LayoutInflater.from(parent.context).inflate(R.layout.item_surah, parent, false)
+        val itemView = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_surah, parent, false)
         return SurahViewHolder(itemView)
     }
 

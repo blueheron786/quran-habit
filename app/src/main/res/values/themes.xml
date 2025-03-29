@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <style name="Theme.QuranHabit" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Base application theme -->
+    <style name="Theme.QuranHabit" parent="Theme.MaterialComponents.DayNight">
+        <!-- Customize your theme here -->
+    </style>
 </resources>

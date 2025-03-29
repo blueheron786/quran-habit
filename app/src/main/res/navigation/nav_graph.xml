@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -7,9 +6,9 @@
 
     <fragment
         android:id="@+id/surahListFragment"
-        android:name="com.quranhabit.ui.SurahListFragment"
-        android:label="Surah List"
+        android:name="com.quranhabit.ui.surah.SurahListFragment"
         tools:layout="@layout/fragment_surah_list">
+        
         <action
             android:id="@+id/action_surahListFragment_to_quranReaderFragment"
             app:destination="@id/quranReaderFragment">
@@ -21,12 +20,10 @@
 
     <fragment
         android:id="@+id/quranReaderFragment"
-        android:name="com.quranhabit.ui.QuranReaderFragment"
-        android:label="Quran Reader"
+        android:name="com.quranhabit.ui.reader.QuranReaderFragment"
         tools:layout="@layout/fragment_quran_reader">
         <argument
             android:name="surahNumber"
             app:argType="integer" />
     </fragment>
-
 </navigation>

@@ -1,4 +1,4 @@
-package com.quranhabit.ui
+package com.quranhabit.ui.surah
 
 import android.os.Bundle
 import android.view.LayoutInflater

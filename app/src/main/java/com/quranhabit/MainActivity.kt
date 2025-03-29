@@ -1,20 +1,13 @@
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.ui.Modifier
+package com.quranhabit
 
-class MainActivity : ComponentActivity() {
+import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
+
+// com.quranhabit.ui.MainActivity
+class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            MaterialTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    // Your Compose UI will go here
-                }
-            }
-        }
+        setContentView(R.layout.activity_main)
+        // Navigation is handled via nav_graph.xml
     }
 }
