@@ -15,7 +15,6 @@ import com.quranhabit.R
 class QuranReaderFragment : Fragment() {
 
     private lateinit var quranTextView: TextView
-    private val args: QuranReaderFragmentArgs by navArgs()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,

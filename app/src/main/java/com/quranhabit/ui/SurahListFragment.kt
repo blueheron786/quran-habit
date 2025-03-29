@@ -30,9 +30,13 @@ class SurahListFragment : Fragment() {
 
         val surahList = getSurahList()
         surahAdapter = SurahAdapter(surahList) { surah ->
-            val action = SurahListFragmentDirections.actionSurahListFragmentToQuranReaderFragment(surah.number)
-            findNavController().navigate(action)
+            // Manual navigation (no Directions class required)
+            findNavController().navigate(
+                R.id.action_surahListFragment_to_quranReaderFragment,
+                Bundle().apply { putInt("surahNumber", surah.number) }
+            )
         }
+
         surahRecyclerView.adapter = surahAdapter
     }
 
