@@ -46,6 +46,8 @@ dependencies {
     implementation(libs.androidx.viewpager2)
     implementation(libs.mpandroidchart)
     implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.navigation.fragment.ktx)
+    implementation(libs.androidx.navigation.ui.ktx)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
     testImplementation(libs.junit)

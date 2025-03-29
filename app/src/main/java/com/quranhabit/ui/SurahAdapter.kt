@@ -7,7 +7,8 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.quranhabit.R
 
-class SurahAdapter(private val surahList: List<Surah>) : RecyclerView.Adapter<SurahAdapter.SurahViewHolder>() {
+class SurahAdapter(private val surahList: List<Surah>, private val onItemClick: (Surah) -> Unit) :
+    RecyclerView.Adapter<SurahAdapter.SurahViewHolder>() {
 
     class SurahViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val surahNameTextView: TextView = itemView.findViewById(R.id.surahNameTextView)
@@ -23,6 +24,10 @@ class SurahAdapter(private val surahList: List<Surah>) : RecyclerView.Adapter<Su
         val currentSurah = surahList[position]
         holder.surahNameTextView.text = currentSurah.name
         holder.surahNumberTextView.text = "Surah ${currentSurah.number}"
+
+        holder.itemView.setOnClickListener {
+            onItemClick(currentSurah)
+        }
     }
 
     override fun getItemCount() = surahList.size
