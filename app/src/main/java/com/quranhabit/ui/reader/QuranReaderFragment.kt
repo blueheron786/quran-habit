@@ -34,26 +34,29 @@ class QuranReaderFragment : Fragment() {
         quranTextView.typeface = typeface
     }
 
+    private val cachedPages by lazy {
+        val json = loadJsonFromRaw(R.raw.pages)
+        Gson().fromJson<List<List<List<PageAyahRange>>>>(
+            json,
+            object : TypeToken<List<List<List<PageAyahRange>>>>() {}.type
+        )
+    }
+
     private fun loadPageText(pageNumber: Int): String {
-        val pagesJson = loadJsonFromRaw(R.raw.pages)
-        val pagesList = Gson().fromJson<List<List<PageAyahRange>>>(pagesJson, object : TypeToken<List<List<PageAyahRange>>>() {}.type)
-
-        val quranText = loadTextFromRaw(R.raw.quran_uthmani).split("\n").toTypedArray()
-
-        if (pageNumber in 1..pagesList.size) {
-            val ayahRanges = pagesList[pageNumber - 1]
-            val allAyahs = mutableListOf<String>()
-            for (range in ayahRanges) {
-                allAyahs.addAll(quranText.sliceArray(range.start - 1 until range.end).toList()) // Adjusting index to start from 0
-            }
-            return allAyahs.joinToString("\n")
-        } else {
-            return "Page text not found."
-        }
+        return cachedPages
+            .getOrNull(pageNumber - 1)
+            ?.flatten()
+            ?.joinToString("\n") { range ->
+                quranLines.slice(range.start - 1 until range.end).joinToString("\n")
+            } ?: "Page not found"
     }
 
     private fun loadJsonFromRaw(resourceId: Int): String {
         return resources.openRawResource(resourceId).bufferedReader().use { it.readText() }
+    }
+
+    private val quranLines by lazy {
+        loadTextFromRaw(R.raw.quran_uthmani).lines()
     }
 
     private fun loadTextFromRaw(resourceId: Int): String {
