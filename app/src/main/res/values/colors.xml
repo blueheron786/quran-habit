@@ -2,8 +2,7 @@
 <resources>
     <!-- Primary Theme Colors -->
     <color name="primary">#0066CC</color>
-    <color name="primary_dark">#3700B3</color>
-    <color name="primary_light">#BB86FC</color>
+    <color name="primary_dark">#003366</color>
 
     <!-- Text Colors -->
     <color name="text_primary">#FFFFFF</color>
@@ -11,10 +10,6 @@
     <!-- Background Colors -->
     <color name="background_dark">#00001E</color>
     <color name="ayah_background">#000044</color>
-
-    <!-- Button Colors -->
-    <color name="button_primary">#4C50AF</color>
-    <color name="button_text">#FFFFFF</color>
 
     <!-- Ayah Number Circle -->
     <color name="ayah_number_bg">#4C50AF</color>
