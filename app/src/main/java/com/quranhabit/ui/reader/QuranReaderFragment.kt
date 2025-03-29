@@ -28,10 +28,9 @@ class QuranReaderFragment : Fragment() {
     private val binding get() = _binding!!
     private lateinit var arabicTypeface: Typeface
     private lateinit var pageAdapter: QuranPageAdapter
-    private lateinit var allPages: List<List<PageAyahRange>>
+    private lateinit var allPages: List<List<PageAyahRange>> // original order
     private lateinit var quranLines: List<String>
     private var currentSurahNumber = 1
-    private var currentScrollY = 0
 
     private val cachedPages by lazy {
         val json = loadTextFromRaw(R.raw.pages_absolute)
@@ -66,12 +65,9 @@ class QuranReaderFragment : Fragment() {
     }
 
     private fun setupViewPager() {
-        // 1. Reverse the pages for RTL display
-        val reversedPages = allPages.reversed()
-
-        // 2. Create adapter with reversed pages
+        // Remove the .reversed() - we'll handle RTL differently
         pageAdapter = QuranPageAdapter(
-            allPages = reversedPages,
+            allPages = allPages,  // Use original order
             arabicTypeface = arabicTypeface,
             quranLines = quranLines,
             onAyahMarked = { surahNumber, ayahNumber ->
@@ -80,19 +76,17 @@ class QuranReaderFragment : Fragment() {
             getFirstLineNumber = ::getFirstLineNumberForSurah
         )
 
-        // 3. Configure ViewPager2
+        // Configure ViewPager2 for RTL
         binding.quranPager.adapter = pageAdapter
         binding.quranPager.layoutDirection = View.LAYOUT_DIRECTION_RTL
 
-        // 4. Set initial position (convert to reversed index)
+        // Set initial page (no position conversion needed)
         val initialPage = findFirstPageForSurah(currentSurahNumber)
-        val rtlInitialPage = allPages.size - 1 - initialPage
-        binding.quranPager.setCurrentItem(rtlInitialPage, false)
+        binding.quranPager.setCurrentItem(initialPage, false)
 
-        // 5. Set up page change listener
+        // Update page change listener
         binding.quranPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
-                // Position is already in RTL order
                 updateHeader(position)
                 saveCurrentPage(position)
             }
@@ -182,10 +176,8 @@ class QuranReaderFragment : Fragment() {
         }
 
         override fun onBindViewHolder(holder: PageViewHolder, rtlPosition: Int) {
-            // Convert RTL position to actual position
-            val actualPosition = allPages.size - 1 - rtlPosition
-            val pageRanges = allPages[actualPosition]
-
+            // Use position directly (ViewPager2 handles RTL mapping)
+            val pageRanges = allPages[rtlPosition]
             holder.binding.pageContent.removeAllViews()
 
             pageRanges.forEach { range ->
