@@ -1,4 +1,4 @@
-package com.quranhabit.ui
+package com.quranhabit.ui.reader
 
 import android.graphics.Typeface
 import android.os.Bundle
@@ -7,7 +7,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
-import androidx.navigation.fragment.navArgs
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.quranhabit.R

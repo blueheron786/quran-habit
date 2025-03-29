@@ -7,7 +7,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.quranhabit.R
 
-class SurahAdapter(private val surahList: List<Surah>, private val onItemClick: (Surah) -> Unit) :
+class SurahAdapter(private val surahList: List<Surah>, private val onSurahClick: (Surah) -> Unit) :
     RecyclerView.Adapter<SurahAdapter.SurahViewHolder>() {
 
     class SurahViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -27,7 +27,7 @@ class SurahAdapter(private val surahList: List<Surah>, private val onItemClick: 
         holder.surahNumberTextView.text = "Surah ${currentSurah.number}"
 
         holder.itemView.setOnClickListener {
-            onItemClick(currentSurah)
+            onSurahClick(currentSurah)
         }
     }
 
