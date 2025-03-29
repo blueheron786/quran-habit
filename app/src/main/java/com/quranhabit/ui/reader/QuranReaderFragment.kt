@@ -36,7 +36,7 @@ class QuranReaderFragment : Fragment() {
         // Set Arabic font
         quranTextView.typeface = Typeface.createFromAsset(
             requireContext().assets,
-            "fonts/KFGQPC_Hafs.otf"
+            "fonts/kitab.ttf"
         )
         quranTextView.textDirection = View.TEXT_DIRECTION_RTL
     }
