@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/ayah_background"
+    android:padding="16dp"
+    android:layout_marginBottom="8dp">
+
+    <TextView
+        android:id="@+id/ayahNumberTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        android:background="@drawable/circle_background"
+        android:padding="4dp"
+        android:text="1" />
+
+    <TextView
+        android:id="@+id/ayahTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/white"
+        android:textSize="36sp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:textDirection="anyRtl" />
+
+    <Button
+        android:id="@+id/markButton"
+        android:layout_width="wrap_content"
+        android:layout_height="28dp"
+        android:text="Mark"
+        android:textSize="12sp"
+        android:textColor="@color/white"
+        android:background="@drawable/rounded_button"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="0dp"
+        android:layout_marginTop="4dp"
+        android:layout_gravity="end"
+        android:minHeight="0dp"
+        android:minWidth="0dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp" />
+
+</LinearLayout>
