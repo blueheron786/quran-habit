@@ -66,11 +66,12 @@ class QuranReaderFragment : Fragment() {
     }
 
     private fun setupViewPager() {
-        // Force RTL layout direction
-        binding.quranPager.layoutDirection = View.LAYOUT_DIRECTION_RTL
+        // 1. Reverse the pages for RTL display
+        val reversedPages = allPages.reversed()
 
+        // 2. Create adapter with reversed pages
         pageAdapter = QuranPageAdapter(
-            allPages = allPages,
+            allPages = reversedPages,
             arabicTypeface = arabicTypeface,
             quranLines = quranLines,
             onAyahMarked = { surahNumber, ayahNumber ->
@@ -79,20 +80,23 @@ class QuranReaderFragment : Fragment() {
             getFirstLineNumber = ::getFirstLineNumberForSurah
         )
 
+        // 3. Configure ViewPager2
         binding.quranPager.adapter = pageAdapter
+        binding.quranPager.layoutDirection = View.LAYOUT_DIRECTION_RTL
+
+        // 4. Set initial position (convert to reversed index)
+        val initialPage = findFirstPageForSurah(currentSurahNumber)
+        val rtlInitialPage = allPages.size - 1 - initialPage
+        binding.quranPager.setCurrentItem(rtlInitialPage, false)
+
+        // 5. Set up page change listener
         binding.quranPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
-                // The position is already in RTL order due to layoutDirection
+                // Position is already in RTL order
                 updateHeader(position)
                 saveCurrentPage(position)
             }
         })
-
-        val initialPage = findFirstPageForSurah(currentSurahNumber)
-        // Convert to RTL position
-        val rtlInitialPage = allPages.size - 1 - initialPage
-        binding.quranPager.setCurrentItem(rtlInitialPage, false)
-        updateHeader(rtlInitialPage) // Initialize header with correct position
     }
 
     private fun updateHeader(rtlPosition: Int) {
