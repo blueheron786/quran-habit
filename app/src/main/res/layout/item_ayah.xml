@@ -6,7 +6,8 @@
     android:orientation="vertical"
     android:background="@drawable/ayah_background"
     android:padding="16dp"
-    android:layout_marginBottom="8dp">
+    android:layout_marginBottom="8dp"
+    android:textDirection="rtl">
 
     <TextView
         android:id="@+id/ayahNumberTextView"
@@ -25,7 +26,8 @@
         android:textSize="36sp"
         android:paddingTop="4dp"
         android:paddingBottom="4dp"
-        android:textDirection="anyRtl" />
+        android:layoutDirection="rtl"
+        android:textDirection="rtl" />
 
     <Button
         android:id="@+id/markButton"

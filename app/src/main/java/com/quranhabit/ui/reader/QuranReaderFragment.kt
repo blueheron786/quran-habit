@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Typeface
 import android.os.Bundle
 import android.util.Log
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -62,10 +63,12 @@ class QuranReaderFragment : Fragment() {
         quranLines = loadTextFromRaw(R.raw.quran_uthmani).lines()
 
         setupViewPager()
-        updateHeader()
     }
 
     private fun setupViewPager() {
+        // Force RTL layout direction
+        binding.quranPager.layoutDirection = View.LAYOUT_DIRECTION_RTL
+
         pageAdapter = QuranPageAdapter(
             allPages = allPages,
             arabicTypeface = arabicTypeface,
@@ -79,20 +82,31 @@ class QuranReaderFragment : Fragment() {
         binding.quranPager.adapter = pageAdapter
         binding.quranPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
-                updateHeader()
+                // The position is already in RTL order due to layoutDirection
+                updateHeader(position)
                 saveCurrentPage(position)
             }
         })
 
         val initialPage = findFirstPageForSurah(currentSurahNumber)
-        binding.quranPager.setCurrentItem(initialPage, false)
+        // Convert to RTL position
+        val rtlInitialPage = allPages.size - 1 - initialPage
+        binding.quranPager.setCurrentItem(rtlInitialPage, false)
+        updateHeader(rtlInitialPage) // Initialize header with correct position
     }
 
-    private fun updateHeader() {
-        val currentPage = binding.quranPager.currentItem
-        val currentSurah = getSurahForPage(currentPage)
+    private fun updateHeader(rtlPosition: Int) {
+        // Convert RTL position back to logical position for data lookup
+        val actualPosition = allPages.size - 1 - rtlPosition
+        val currentSurah = getSurahForPage(actualPosition)
+
         binding.surahInfoTextView.text = "${currentSurah.number}. ${currentSurah.englishName}"
-        binding.pageInfoTextView.text = "Page ${currentPage + 1}/${allPages.size}"
+        binding.pageInfoTextView.text = "صفحة ${rtlPosition + 1}/${allPages.size}"
+
+        // Ensure RTL text direction
+        binding.surahInfoTextView.textDirection = View.TEXT_DIRECTION_RTL
+        binding.pageInfoTextView.textDirection = View.TEXT_DIRECTION_RTL
+        binding.pageInfoTextView.gravity = Gravity.END
     }
 
     private fun getSurahForPage(pageIndex: Int): Surah {
@@ -163,8 +177,11 @@ class QuranReaderFragment : Fragment() {
             return PageViewHolder(binding)
         }
 
-        override fun onBindViewHolder(holder: PageViewHolder, position: Int) {
-            val pageRanges = allPages[position]
+        override fun onBindViewHolder(holder: PageViewHolder, rtlPosition: Int) {
+            // Convert RTL position to actual position
+            val actualPosition = allPages.size - 1 - rtlPosition
+            val pageRanges = allPages[actualPosition]
+
             holder.binding.pageContent.removeAllViews()
 
             pageRanges.forEach { range ->
