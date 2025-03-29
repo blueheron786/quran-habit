@@ -1,16 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/primary_dark"
-    android:padding="8dp">
+    android:background="@color/background_dark">
 
-    <LinearLayout
-        android:id="@+id/quranContainer"
+    <!-- Header -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/headerCard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:divider="@drawable/divider_spacer"
-        android:showDividers="middle" />
+        android:layout_margin="8dp"
+        app:cardBackgroundColor="@color/ayah_background"
+        app:cardElevation="4dp"
+        app:contentPadding="8dp">
 
-</ScrollView>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/surahInfoTextView"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/pageInfoTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"/>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ViewPager2 for swiping pages -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/quranPager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="?attr/actionBarSize"/>
+</FrameLayout>

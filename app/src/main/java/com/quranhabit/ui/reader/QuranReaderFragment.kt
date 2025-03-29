@@ -1,24 +1,44 @@
 package com.quranhabit.ui.reader
 
+import android.content.Context
 import android.graphics.Typeface
 import android.os.Bundle
-import android.view.Gravity
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat
+import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.widget.ViewPager2
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.quranhabit.R
 import com.quranhabit.databinding.FragmentQuranReaderBinding
 import com.quranhabit.databinding.ItemAyahBinding
+import com.quranhabit.databinding.ItemPageBinding
 import com.quranhabit.ui.surah.Ayah
+import com.quranhabit.ui.surah.Surah
+import com.quranhabit.data.SurahRepository
 
 class QuranReaderFragment : Fragment() {
+
     private var _binding: FragmentQuranReaderBinding? = null
     private val binding get() = _binding!!
     private lateinit var arabicTypeface: Typeface
+    private lateinit var pageAdapter: QuranPageAdapter
+    private lateinit var allPages: List<List<PageAyahRange>>
+    private lateinit var quranLines: List<String>
+    private var currentSurahNumber = 1
+    private var currentScrollY = 0
+
+    private val cachedPages by lazy {
+        val json = loadTextFromRaw(R.raw.pages_absolute)
+        Gson().fromJson<List<List<List<PageAyahRange>>>>(
+            json,
+            object : TypeToken<List<List<List<PageAyahRange>>>>() {}.type
+        )
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -32,106 +52,87 @@ class QuranReaderFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Load Arabic font
         arabicTypeface = Typeface.createFromAsset(
             requireContext().assets,
             "fonts/kitab.ttf"
         )
 
-        // Get surah number from arguments
-        val surahNumber = arguments?.getInt("surahNumber") ?: 1
+        currentSurahNumber = arguments?.getInt("surahNumber") ?: 1
+        allPages = cachedPages.flatten()
+        quranLines = loadTextFromRaw(R.raw.quran_uthmani).lines()
 
-        // Load and display the surah
-        displayFirstPageOfSurah(surahNumber)
+        setupViewPager()
+        updateHeader()
     }
 
-    private fun displayFirstPageOfSurah(surahNumber: Int) {
-        val firstPageAyahs = getFirstPageAyahsForSurah(surahNumber)
-        firstPageAyahs.forEach { ayah ->
-            addAyahToContainer(ayah)
-        }
-    }
+    private fun setupViewPager() {
+        pageAdapter = QuranPageAdapter(
+            allPages = allPages,
+            arabicTypeface = arabicTypeface,
+            quranLines = quranLines,
+            onAyahMarked = { surahNumber, ayahNumber ->
+                saveLastReadAyah(surahNumber, ayahNumber)
+            },
+            getFirstLineNumber = ::getFirstLineNumberForSurah
+        )
 
-    private fun getFirstPageAyahsForSurah(surahNumber: Int): List<Ayah> {
-        // Get all pages
-        val allPages = cachedPages.flatten()
-
-        // Find the first page that contains this surah
-        val firstPageWithSurah = allPages.firstOrNull { page ->
-            page.any { range -> range.surah == surahNumber }
-        } ?: return emptyList()
-
-        // Get all ranges for this surah in the first page
-        val surahRanges = firstPageWithSurah.filter { it.surah == surahNumber }
-
-        val quranLines = loadTextFromRaw(R.raw.quran_uthmani).lines()
-
-        return surahRanges.flatMap { range ->
-            (range.start..range.end).map { lineNumber ->
-                Ayah(
-                    surahNumber = surahNumber,
-                    ayahNumber = lineNumber - getFirstLineNumberForSurah(surahNumber) + 1,
-                    text = quranLines[lineNumber - 1]
-                )
+        binding.quranPager.adapter = pageAdapter
+        binding.quranPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                updateHeader()
+                saveCurrentPage(position)
             }
-        }
+        })
+
+        val initialPage = findFirstPageForSurah(currentSurahNumber)
+        binding.quranPager.setCurrentItem(initialPage, false)
     }
 
-    private fun addAyahToContainer(ayah: Ayah) {
-        val ayahBinding = ItemAyahBinding.inflate(layoutInflater, binding.quranContainer, false)
+    private fun updateHeader() {
+        val currentPage = binding.quranPager.currentItem
+        val currentSurah = getSurahForPage(currentPage)
+        binding.surahInfoTextView.text = "${currentSurah.number}. ${currentSurah.englishName}"
+        binding.pageInfoTextView.text = "Page ${currentPage + 1}/${allPages.size}"
+    }
 
-        ayahBinding.apply {
-            ayahNumberTextView.text = ayah.ayahNumber.toString()
-            ayahTextView.text = ayah.text
-            ayahTextView.typeface = arabicTypeface
-            ayahTextView.textDirection = View.TEXT_DIRECTION_RTL
+    private fun getSurahForPage(pageIndex: Int): Surah {
+        val surahNumber = allPages[pageIndex].first().surah
+        return SurahRepository.getSurahByNumber(surahNumber) ?:
+        Surah(0, "Unknown", "غير معروف")
+    }
 
-            markButton.setOnClickListener {
-                saveLastReadAyah(ayah.surahNumber, ayah.ayahNumber)
-            }
-
-            // Make the circle look better
-            ayahNumberTextView.setBackgroundResource(R.drawable.circle_background)
-            ayahNumberTextView.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white))
-            ayahNumberTextView.gravity = Gravity.CENTER
-            ayahNumberTextView.textSize = 12f
-        }
-
-        binding.quranContainer.addView(ayahBinding.root)
+    private fun findFirstPageForSurah(surahNumber: Int): Int {
+        return allPages.indexOfFirst { page ->
+            page.any { it.surah == surahNumber }
+        }.takeIf { it != -1 } ?: 0
     }
 
     private fun getFirstLineNumberForSurah(surahNumber: Int): Int {
-        // Implement logic to get the first line number for the given surah
-        // This is needed to calculate the correct ayah number
-        return cachedPages
-            .flatten()
-            .flatten()
-            .first { it.surah == surahNumber }
-            .start
-    }
-
-    private fun saveLastReadAyah(surahNumber: Int, ayahNumber: Int) {
-        // Implement saving last read position
-        // Example using SharedPreferences:
-        val sharedPref = requireContext().getSharedPreferences("QuranPrefs", 0)
-        with(sharedPref.edit()) {
-            putInt("lastSurah", surahNumber)
-            putInt("lastAyah", ayahNumber)
-            apply()
+        return try {
+            cachedPages
+                .flatten()
+                .flatten()
+                .first { it.surah == surahNumber }
+                .start
+        } catch (e: Exception) {
+            Log.e("QuranReader", "Error finding first line for surah $surahNumber", e)
+            0
         }
     }
 
-    // Rest of your existing code (cachedPages, quranLines, loadJsonFromRaw, loadTextFromRaw, PageAyahRange)
-    private val cachedPages by lazy {
-        val json = loadJsonFromRaw(R.raw.pages_absolute)
-        Gson().fromJson<List<List<List<PageAyahRange>>>>(
-            json,
-            object : TypeToken<List<List<List<PageAyahRange>>>>() {}.type
-        )
+    private fun saveLastReadAyah(surahNumber: Int, ayahNumber: Int) {
+        requireContext().getSharedPreferences("QuranPrefs", Context.MODE_PRIVATE).edit()
+            .putInt("lastSurah", surahNumber)
+            .putInt("lastAyah", ayahNumber)
+            .apply()
+
+        Toast.makeText(context, "Saved position: Surah $surahNumber Ayah $ayahNumber", Toast.LENGTH_SHORT).show()
     }
 
-    private fun loadJsonFromRaw(resourceId: Int): String {
-        return resources.openRawResource(resourceId).bufferedReader().use { it.readText() }
+    private fun saveCurrentPage(page: Int) {
+        requireContext().getSharedPreferences("QuranPrefs", Context.MODE_PRIVATE).edit()
+            .putInt("lastPage", page)
+            .apply()
     }
 
     private fun loadTextFromRaw(resourceId: Int): String {
@@ -141,6 +142,70 @@ class QuranReaderFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    class QuranPageAdapter(
+        private val allPages: List<List<PageAyahRange>>,
+        private val arabicTypeface: Typeface,
+        private val quranLines: List<String>,
+        private val onAyahMarked: (surahNumber: Int, ayahNumber: Int) -> Unit,
+        private val getFirstLineNumber: (Int) -> Int
+    ) : RecyclerView.Adapter<QuranPageAdapter.PageViewHolder>() {
+
+        inner class PageViewHolder(val binding: ItemPageBinding) : RecyclerView.ViewHolder(binding.root)
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PageViewHolder {
+            val binding = ItemPageBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            )
+            return PageViewHolder(binding)
+        }
+
+        override fun onBindViewHolder(holder: PageViewHolder, position: Int) {
+            val pageRanges = allPages[position]
+            holder.binding.pageContent.removeAllViews()
+
+            pageRanges.forEach { range ->
+                (range.start..range.end).forEach { lineNumber ->
+                    val ayah = Ayah(
+                        surahNumber = range.surah,
+                        ayahNumber = lineNumber - getFirstLineNumber(range.surah) + 1,
+                        text = quranLines[lineNumber - 1]
+                    )
+                    addAyahToView(holder.binding.pageContent, ayah)
+                }
+            }
+        }
+
+        override fun getItemCount() = allPages.size
+
+        private fun addAyahToView(container: ViewGroup, ayah: Ayah) {
+            val ayahBinding = ItemAyahBinding.inflate(
+                LayoutInflater.from(container.context),
+                container,
+                false
+            )
+
+            ayahBinding.apply {
+                ayahNumberTextView.text = ayah.ayahNumber.toString()
+                ayahTextView.text = ayah.text
+                ayahTextView.typeface = arabicTypeface
+                ayahTextView.textDirection = View.TEXT_DIRECTION_RTL
+
+                markButton.setOnClickListener {
+                    onAyahMarked(ayah.surahNumber, ayah.ayahNumber)
+                }
+
+                ayahNumberTextView.setBackgroundResource(R.drawable.circle_background)
+                ayahNumberTextView.setTextColor(container.context.getColor(android.R.color.white))
+                ayahNumberTextView.gravity = android.view.Gravity.CENTER
+                ayahNumberTextView.textSize = 12f
+            }
+
+            container.addView(ayahBinding.root)
+        }
     }
 }
 
