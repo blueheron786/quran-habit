@@ -4,10 +4,11 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:padding="16dp"
+    android:gravity="center_vertical"
+    android:layoutDirection="ltr"
     android:background="@color/ayah_background">
 
-    <!-- English Name (Left) -->
+    <!-- English (Left-aligned) -->
     <TextView
         android:id="@+id/englishNameTextView"
         android:layout_width="0dp"
@@ -15,18 +16,20 @@
         android:layout_weight="1"
         android:textSize="20sp"
         android:textColor="@color/text_primary"
-        tools:text="Al-Fatihah" />
+        android:gravity="start"
+        tools:text="Al-Fatiha"/>
 
-    <!-- Arabic Name (Right) -->
+    <!-- Arabic (Right-aligned) -->
     <TextView
         android:id="@+id/arabicNameTextView"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
         android:textSize="32sp"
         android:textColor="@color/text_primary"
         android:textDirection="rtl"
         android:gravity="end"
-        tools:text="الفاتحة" />
-
+        android:layout_marginStart="16dp"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        tools:text="الفاتحة"/>
 </LinearLayout>

@@ -6,14 +6,13 @@
     android:orientation="vertical"
     android:background="@drawable/ayah_background"
     android:padding="16dp"
-    android:layout_marginBottom="8dp"
     android:textDirection="rtl">
 
     <TextView
         android:id="@+id/ayahNumberTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="@color/ayah_number_text"
+        android:textColor="@color/text_primary"
         android:textSize="14sp"
         android:background="@drawable/circle_background"
         android:text="1" />
@@ -41,6 +40,7 @@
         android:paddingHorizontal="12dp"
         android:paddingVertical="0dp"
         android:layout_marginTop="4dp"
+        android:layout_marginBottom="16dp"
         android:layout_gravity="end"
         android:minHeight="0dp"
         android:minWidth="0dp"

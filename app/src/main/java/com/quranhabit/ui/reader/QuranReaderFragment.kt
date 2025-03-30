@@ -54,7 +54,7 @@ class QuranReaderFragment : Fragment() {
 
         arabicTypeface = Typeface.createFromAsset(
             requireContext().assets,
-            "fonts/kitab.ttf"
+            "fonts/AmiriQuran.ttf"
         )
 
         currentSurahNumber = arguments?.getInt("surahNumber") ?: 1
@@ -92,7 +92,7 @@ class QuranReaderFragment : Fragment() {
     private fun updateHeader(rtlPosition: Int) {
         val currentSurah = getSurahForPage(rtlPosition)
         binding.surahInfoTextView.text = "${currentSurah.number}. ${currentSurah.englishName}"
-        binding.pageInfoTextView.text = "page ${rtlPosition + 1}/${allPages.size}"
+        binding.pageInfoTextView.text = "page ${rtlPosition + 1}"
     }
 
     private fun getSurahForPage(rtlPosition: Int): Surah {
