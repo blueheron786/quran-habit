@@ -1,34 +1,23 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/nav_graph"
     app:startDestination="@id/surahListFragment">
 
     <fragment
         android:id="@+id/surahListFragment"
         android:name="com.quranhabit.ui.surah.SurahListFragment"
-        tools:layout="@layout/fragment_surah_list">
-        
+        android:label="Surah List">
+
         <action
             android:id="@+id/action_surahListFragment_to_quranReaderFragment"
-            app:destination="@id/quranReaderFragment">
-            <argument
-                android:name="surahNumber"
-                app:argType="integer" />
-        </action>
+            app:destination="@id/quranReaderFragment" />
     </fragment>
 
     <fragment
         android:id="@+id/quranReaderFragment"
         android:name="com.quranhabit.ui.reader.QuranReaderFragment"
-        tools:layout="@layout/fragment_quran_reader">
+        android:label="Quran Reader">
         <argument
             android:name="surahNumber"
             app:argType="integer" />
     </fragment>
-
-    <fragment
-        android:id="@+id/readingProgressFragment"
-        android:name="com.quranhabit.ui.progress.ReadingProgressFragment"
-        android:label="Reading Progress" />
 </navigation>

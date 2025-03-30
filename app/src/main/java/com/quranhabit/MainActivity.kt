@@ -13,7 +13,7 @@ class MainActivity : AppCompatActivity() {
 
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
-                .replace(R.id.container, SurahListFragment()) // Replace with your main fragment
+                .replace(R.id.nav_host_fragment, SurahListFragment()) // Replace with your main fragment
                 .commit()
         }
 
@@ -23,7 +23,7 @@ class MainActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.navigation_progress -> {
                     supportFragmentManager.beginTransaction()
-                        .replace(R.id.container, ReadingProgressFragment())
+                        .replace(R.id.nav_host_fragment, ReadingProgressFragment())
                         .commit()
                     true
                 }

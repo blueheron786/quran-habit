@@ -133,7 +133,7 @@ class QuranReaderFragment : Fragment() {
     private fun updateHeader(position: Int) {
         val currentSurah = getSurahForPage(position)
         binding.surahInfoTextView.text = "${currentSurah.number}. ${currentSurah.englishName}"
-        binding.pageInfoTextView.text = "صفحة ${position + 1}"
+        binding.pageInfoTextView.text = "page ${position + 1}"
     }
 
     private fun getSurahForPage(position: Int): Surah {
