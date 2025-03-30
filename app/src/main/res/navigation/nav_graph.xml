@@ -26,4 +26,9 @@
             android:name="surahNumber"
             app:argType="integer" />
     </fragment>
+
+    <fragment
+        android:id="@+id/readingProgressFragment"
+        android:name="com.quranhabit.ui.progress.ReadingProgressFragment"
+        android:label="Reading Progress" />
 </navigation>

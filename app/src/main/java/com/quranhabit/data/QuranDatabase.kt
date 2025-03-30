@@ -21,16 +21,16 @@ abstract class QuranDatabase : RoomDatabase() {
     companion object {
         @Volatile
         private var INSTANCE: QuranDatabase? = null
-
         fun getDatabase(context: Context): QuranDatabase {
             return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
+                Room.databaseBuilder(
                     context.applicationContext,
                     QuranDatabase::class.java,
                     "quran_database"
-                ).build()
-                INSTANCE = instance
-                instance
+                )
+                    .fallbackToDestructiveMigration() // For development only
+                    .build()
+                    .also { INSTANCE = it }
             }
         }
     }

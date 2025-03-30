@@ -103,7 +103,6 @@ class QuranReaderFragment : Fragment() {
                         trackPageRead(newPage)
                     }
                 }
-
                 currentPage = newPage
             }
         })
@@ -111,12 +110,12 @@ class QuranReaderFragment : Fragment() {
 
     private suspend fun trackPageRead(page: Int) {
         try {
-            // Update daily reading
+            // 1. Update daily reading
             val today = LocalDate.now().toString()
             val session = readingSessionDao.getByDate(today) ?: ReadingSession(today, 0)
             readingSessionDao.upsert(session.copy(pagesRead = session.pagesRead + 1))
 
-            // Update last read position
+            // 2. Update last read position
             val firstAyah = allPages[page].first().start
             lastReadDao.upsert(
                 LastReadPosition(
@@ -127,7 +126,7 @@ class QuranReaderFragment : Fragment() {
                 )
             )
         } catch (e: Exception) {
-            Log.e("QuranReader", "Error tracking page read", e)
+            Log.e("QuranReader", "Error tracking page", e)
         }
     }
 
