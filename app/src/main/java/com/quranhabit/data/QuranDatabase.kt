@@ -4,18 +4,19 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
-import com.quranhabit.data.dao.DailyReadingDao
-import com.quranhabit.data.dao.ReadingProgressDao
-import com.quranhabit.data.entity.DailyReading
-import com.quranhabit.data.entity.ReadingProgress
-import com.quranhabit.utils.DateConverter
+import com.quranhabit.data.dao.LastReadPositionDao
+import com.quranhabit.data.dao.ReadingSessionDao
+import com.quranhabit.data.entity.LastReadPosition
+import com.quranhabit.data.entity.ReadingSession
 
-@Database(entities = [ReadingProgress::class, DailyReading::class], version = 1)
-@TypeConverters(DateConverter::class)
+@Database(
+    entities = [ReadingSession::class, LastReadPosition::class],
+    version = 1,
+    exportSchema = false
+)
 abstract class QuranDatabase : RoomDatabase() {
-    abstract fun readingProgressDao(): ReadingProgressDao
-    abstract fun dailyReadingDao(): DailyReadingDao
+    abstract fun readingSessionDao(): ReadingSessionDao
+    abstract fun lastReadPositionDao(): LastReadPositionDao
 
     companion object {
         @Volatile
