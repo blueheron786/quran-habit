@@ -54,7 +54,7 @@ class QuranReaderFragment : Fragment() {
 
         arabicTypeface = Typeface.createFromAsset(
             requireContext().assets,
-            "fonts/AmiriQuran.ttf"
+            "fonts/ScheherazadeNewRegular.ttf"
         )
 
         currentSurahNumber = arguments?.getInt("surahNumber") ?: 1

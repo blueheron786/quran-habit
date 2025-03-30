@@ -36,7 +36,7 @@ class SurahAdapter(
             arabicNameTextView.text = surah.arabicName
 
             // Load Arabic font if needed
-            val typeface = Typeface.createFromAsset(itemView.context.assets, "fonts/AmiriQuran.ttf")
+            val typeface = Typeface.createFromAsset(itemView.context.assets, "fonts/ScheherazadeNewRegular.ttf")
             arabicNameTextView.typeface = typeface
         }
     }
