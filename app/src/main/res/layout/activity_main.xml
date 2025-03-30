@@ -7,10 +7,12 @@
     <!-- Fragment Container (takes up all space above bottom nav) -->
     <FrameLayout
         android:id="@+id/container"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/bottom_nav" />
+        app:layout_constraintBottom_toTopOf="@id/bottom_nav"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
     <!-- Bottom Navigation Bar (fixed at the bottom) -->
     <com.google.android.material.bottomnavigation.BottomNavigationView

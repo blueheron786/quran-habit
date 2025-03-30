@@ -15,8 +15,6 @@ class ReadingProgressViewModel(
         .asLiveData()
 
     val totalProgress = readingSessionDao.getTotalPagesRead()
-        .asLiveData()
-
-    val weeklyStreak = readingSessionDao.getWeeklyStreak()
+        .map { it ?: 0 } // Add null handling
         .asLiveData()
 }

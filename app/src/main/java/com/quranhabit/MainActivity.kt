@@ -24,7 +24,6 @@ class MainActivity : AppCompatActivity() {
                 R.id.navigation_progress -> {
                     supportFragmentManager.beginTransaction()
                         .replace(R.id.container, ReadingProgressFragment())
-                        .addToBackStack(null) // Optional: Allows back button to return to Home
                         .commit()
                     true
                 }

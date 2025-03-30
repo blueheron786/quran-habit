@@ -20,14 +20,4 @@ interface ReadingSessionDao {
 
     @Query("SELECT COALESCE(SUM(pagesRead), 0) FROM reading_sessions")
     fun getTotalPagesRead(): Flow<Int>
-
-    @Query("""
-        SELECT COUNT(*) FROM (
-            SELECT date FROM reading_sessions 
-            WHERE pagesRead > 0 
-            ORDER BY date DESC 
-            LIMIT 7
-        )
-    """)
-    fun getWeeklyStreak(): Flow<Int>
 }

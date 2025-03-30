@@ -14,7 +14,8 @@ import com.quranhabit.databinding.FragmentProgressBinding
 
 class ReadingProgressFragment : Fragment() {
     private var _binding: FragmentProgressBinding? = null
-    private val binding get() = _binding!!
+    private val binding get() = _binding ?: throw IllegalStateException("Binding accessed after onDestroyView")
+
     private val viewModel: ReadingProgressViewModel by viewModels {
         ReadingProgressViewModelFactory(
             QuranDatabase.getDatabase(requireContext()).readingSessionDao()
@@ -30,15 +31,11 @@ class ReadingProgressFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         viewModel.todayProgress.observe(viewLifecycleOwner) { pages ->
-            binding.todayProgress.text = "Today: $pages pages"
+            _binding?.todayProgress?.text = "Today: $pages pages"
         }
 
         viewModel.totalProgress.observe(viewLifecycleOwner) { total ->
-            binding.totalProgress.text = "Total: $total pages"
-        }
-
-        viewModel.weeklyStreak.observe(viewLifecycleOwner) { streak ->
-            binding.streakProgress.text = "Current streak: $streak days"
+            _binding?.totalProgress?.text = "Total: $total pages"
         }
     }
 
