@@ -32,7 +32,7 @@ class QuranReaderFragment : Fragment() {
     private val binding get() = _binding!!
     private lateinit var arabicTypeface: Typeface
 
-    // Page tracking
+    // What page are we on?
     private lateinit var pageAdapter: QuranPageAdapter
     private lateinit var allPages: List<List<PageAyahRange>>
     private lateinit var quranLines: List<String>
