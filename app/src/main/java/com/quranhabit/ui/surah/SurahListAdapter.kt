@@ -1,10 +1,12 @@
 package com.quranhabit.ui.surah
 
+import android.graphics.Typeface
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -86,8 +88,14 @@ class SurahListFragment : Fragment() {
             RecyclerView.ViewHolder(binding.root) {
 
             fun bind(surah: Surah) {
+                val arabicTypeface = Typeface.createFromAsset(
+                    requireContext().assets,
+                    "fonts/ScheherazadeNewRegular.ttf"
+                )
+
                 binding.englishNameTextView.text = surah.englishName
                 binding.arabicNameTextView.text = surah.arabicName
+                binding.arabicNameTextView.typeface = arabicTypeface
 
                 binding.root.setOnClickListener {
                     onItemClick(surah)
