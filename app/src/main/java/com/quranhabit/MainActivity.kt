@@ -17,18 +17,28 @@ class MainActivity : AppCompatActivity() {
                 .commit()
         }
 
-        // Bottom nav setup
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_nav)
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.navigation_progress -> {
                     supportFragmentManager.beginTransaction()
                         .replace(R.id.nav_host_fragment, ReadingProgressFragment())
+                        .addToBackStack("progress") // This adds the transaction to back stack
                         .commit()
                     true
                 }
                 else -> false
             }
+        }
+    }
+
+    override fun onBackPressed() {
+        if (supportFragmentManager.backStackEntryCount > 0) {
+            // If there are fragments in the back stack, pop them
+            supportFragmentManager.popBackStack()
+        } else {
+            // If no fragments in back stack, proceed with default back button behavior
+            super.onBackPressed()
         }
     }
 }
