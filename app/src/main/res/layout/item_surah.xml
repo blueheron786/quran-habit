@@ -6,7 +6,7 @@
     android:orientation="horizontal"
     android:gravity="center_vertical"
     android:layoutDirection="ltr"
-    android:background="@color/ayah_background">
+    android:background="@color/ayah_background"> <!-- Added vertical padding -->
 
     <!-- English (Left-aligned) -->
     <TextView
@@ -17,6 +17,8 @@
         android:textSize="20sp"
         android:textColor="@color/text_primary"
         android:gravity="start"
+        android:paddingStart="16dp"
+        android:paddingEnd="24dp"
         tools:text="Al-Fatiha"/>
 
     <!-- Arabic (Right-aligned) -->
@@ -28,8 +30,7 @@
         android:textColor="@color/text_primary"
         android:textDirection="rtl"
         android:gravity="end"
-        android:layout_marginStart="16dp"
         android:paddingStart="8dp"
-        android:paddingEnd="8dp"
+        android:paddingEnd="16dp"
         tools:text="الفاتحة"/>
 </LinearLayout>

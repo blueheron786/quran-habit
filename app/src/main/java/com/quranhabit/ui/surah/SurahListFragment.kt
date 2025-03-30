@@ -42,8 +42,8 @@ class SurahListFragment : Fragment() {
         }
 
         surahRecyclerView.addItemDecoration(
-            DividerItemDecoration(context, DividerItemDecoration.VERTICAL).apply {
-                setDrawable(ContextCompat.getDrawable(requireContext(), R.drawable.divider)!!)
+            DividerItemDecoration(requireContext(), LinearLayoutManager.VERTICAL).apply {
+                setDrawable(ContextCompat.getDrawable(requireContext(), R.drawable.spacer)!!)
             }
         )
 
