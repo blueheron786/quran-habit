@@ -22,10 +22,10 @@ class MainActivity : AppCompatActivity() {
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_nav)
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
-                R.id.navigation_progress -> {
+                R.id.navigation_statistics -> {
                     supportFragmentManager.beginTransaction()
                         .replace(R.id.nav_host_fragment, StatisticsFragment())
-                        .addToBackStack("progress") // This adds the transaction to back stack
+                        .addToBackStack("statistics") // This adds the transaction to back stack
                         .commit()
                     true
                 }
