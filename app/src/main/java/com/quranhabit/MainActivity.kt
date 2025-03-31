@@ -15,7 +15,7 @@ class MainActivity : AppCompatActivity() {
 
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
-                .replace(R.id.nav_host_fragment, SurahListFragment()) // Replace with your main fragment
+                .replace(R.id.nav_host_fragment, SurahListFragment())
                 .commit()
         }
 
