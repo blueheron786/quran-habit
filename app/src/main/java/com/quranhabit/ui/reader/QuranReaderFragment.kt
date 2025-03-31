@@ -287,6 +287,24 @@ class QuranReaderFragment : Fragment() {
         override fun onBindViewHolder(holder: PageViewHolder, position: Int) {
             holder.binding.pageContent.removeAllViews()
 
+            allPages[position].forEach { range ->
+                (range.start..range.end).forEach { lineNumber ->
+                    val lineText = quranLines[lineNumber - 1]
+                    val firstLineForSurah = getFirstLineNumberForSurah(range.surah)
+                    val ayahNumber = lineNumber - firstLineForSurah + 1
+
+                    val ayah = Ayah(
+                        surahNumber = range.surah,
+                        ayahNumber = ayahNumber,
+                        text = lineText
+                    )
+
+                    addAyahToView(holder.binding.pageContent, ayah)
+                }
+            }
+
+            holder.binding.pageContent.removeAllViews()
+
             // Add each ayah to the page
             allPages[position].forEach { range ->
                 (range.start..range.end).forEach { lineNumber ->
@@ -314,8 +332,59 @@ class QuranReaderFragment : Fragment() {
 
         override fun getItemCount() = allPages.size
 
+        private fun processAyahText(surahNumber: Int, ayahNumber: Int, text: String): String {
+            return if (surahNumber != 1 && ayahNumber == 1 && text.startsWith("بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ")) {
+                // For non-Fatiha surahs, first ayah that starts with Basmalah
+                text.substring("بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ".length).trim()
+            } else {
+                text
+            }
+        }
+
         private fun addAyahToView(container: ViewGroup, ayah: Ayah) {
             val context = container.context
+
+            // Handle Basmalah separately for non-Fatiha surahs
+            if (ayah.surahNumber != 1 && ayah.ayahNumber == 1 &&
+                ayah.text.startsWith("بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ")) {
+
+                // Add Basmalah as unnumbered separator
+                val basmalahBinding = ItemAyahBinding.inflate(
+                    LayoutInflater.from(context),
+                    container,
+                    false
+                ).apply {
+                    ayahNumberTextView.visibility = View.GONE
+                    ayahTextView.text = "بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ"
+                    arabicTypeface?.let { ayahTextView.typeface = it }
+                    ayahTextView.textDirection = View.TEXT_DIRECTION_RTL
+                    (root.layoutParams as? MarginLayoutParams)?.bottomMargin = 8.dpToPx(context)
+                }
+                container.addView(basmalahBinding.root)
+
+                // Add the actual first ayah (without Basmalah)
+                val actualAyahText = ayah.text.substring("بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ".length).trim()
+                val ayahBinding = ItemAyahBinding.inflate(
+                    LayoutInflater.from(context),
+                    container,
+                    false
+                ).apply {
+                    ayahNumberTextView.text = ayah.ayahNumber.toString()
+                    ayahTextView.text = actualAyahText
+                    arabicTypeface?.let { ayahTextView.typeface = it }
+                    ayahTextView.textDirection = View.TEXT_DIRECTION_RTL
+                    ayahNumberTextView.apply {
+                        setBackgroundResource(R.drawable.circle_background)
+                        setTextColor(ContextCompat.getColor(context, android.R.color.white))
+                        gravity = Gravity.CENTER
+                    }
+                    (root.layoutParams as? MarginLayoutParams)?.bottomMargin = 16.dpToPx(context)
+                }
+                container.addView(ayahBinding.root)
+                return
+            }
+
+            // Normal ayah display
             val ayahBinding = ItemAyahBinding.inflate(
                 LayoutInflater.from(context),
                 container,
@@ -323,26 +392,9 @@ class QuranReaderFragment : Fragment() {
             ).apply {
                 ayahNumberTextView.text = ayah.ayahNumber.toString()
                 ayahTextView.text = ayah.text
-
-                // Ensure Arabic font is applied
-                arabicTypeface?.let {
-                    ayahTextView.typeface = it
-                }
-
-                // RTL support
-                ayahTextView.textDirection = View.TEXT_DIRECTION_RTL
-
-                // Style ayah number
-                ayahNumberTextView.apply {
-                    setBackgroundResource(R.drawable.circle_background)
-                    setTextColor(ContextCompat.getColor(context, android.R.color.white))
-                    gravity = Gravity.CENTER
-                }
-
-                // Add spacing between ayahs
+                arabicTypeface?.let { ayahTextView.typeface = it }
                 (root.layoutParams as? MarginLayoutParams)?.bottomMargin = 16.dpToPx(context)
             }
-
             container.addView(ayahBinding.root)
         }
 
