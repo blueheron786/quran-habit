@@ -1,15 +1,15 @@
 package com.quranhabit.ui.reader
 
 import android.content.Context
+import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.util.Log
-import android.view.Gravity
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewGroup.MarginLayoutParams
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.widget.NestedScrollView
@@ -332,75 +332,79 @@ class QuranReaderFragment : Fragment() {
 
         override fun getItemCount() = allPages.size
 
-        private fun processAyahText(surahNumber: Int, ayahNumber: Int, text: String): String {
-            return if (surahNumber != 1 && ayahNumber == 1 && text.startsWith("بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ")) {
-                // For non-Fatiha surahs, first ayah that starts with Basmalah
-                text.substring("بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ".length).trim()
-            } else {
-                text
-            }
-        }
-
         private fun addAyahToView(container: ViewGroup, ayah: Ayah) {
-            val context = container.context
-
-            // Handle Basmalah separately for non-Fatiha surahs
-            if (ayah.surahNumber != 1 && ayah.ayahNumber == 1 &&
-                ayah.text.startsWith("بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ")) {
-
-                // Add Basmalah as unnumbered separator
+            if (isBasmalah(ayah)) {
+                // First create the Basmalah view
                 val basmalahBinding = ItemAyahBinding.inflate(
-                    LayoutInflater.from(context),
+                    LayoutInflater.from(container.context),
                     container,
                     false
                 ).apply {
+                    // Style the Basmalah
                     ayahNumberTextView.visibility = View.GONE
                     ayahTextView.text = "بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ"
-                    arabicTypeface?.let { ayahTextView.typeface = it }
-                    ayahTextView.textDirection = View.TEXT_DIRECTION_RTL
-                    (root.layoutParams as? MarginLayoutParams)?.bottomMargin = 8.dpToPx(context)
+                    ayahTextView.typeface = arabicTypeface
+                    ayahTextView.setShadowLayer(2f, 0f, 1f, Color.parseColor("#40000000"))
+
+                    // Add background and padding
+                    root.setBackgroundResource(R.drawable.basmala_background)
+                    root.setPadding(
+                        dpToPx(container.context, 16),
+                        dpToPx(container.context, 8),
+                        dpToPx(container.context, 16),
+                        dpToPx(container.context, 8)
+                    )
                 }
                 container.addView(basmalahBinding.root)
 
-                // Add the actual first ayah (without Basmalah)
-                val actualAyahText = ayah.text.substring("بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ".length).trim()
+                // Then create the actual ayah view if there's remaining text
+                val remainingText = ayah.text.substring("بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ".length).trim()
+                if (remainingText.isNotEmpty()) {
+                    val ayahBinding = ItemAyahBinding.inflate(
+                        LayoutInflater.from(container.context),
+                        container,
+                        false
+                    )
+                    ayahBinding.ayahNumberTextView.text = ayah.ayahNumber.toString()
+                    ayahBinding.ayahTextView.text = remainingText
+                    ayahBinding.ayahTextView.typeface = arabicTypeface
+                    ayahBinding.ayahTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 36f)
+                    container.addView(ayahBinding.root)
+                }
+            } else {
+                // Normal ayah
                 val ayahBinding = ItemAyahBinding.inflate(
-                    LayoutInflater.from(context),
+                    LayoutInflater.from(container.context),
                     container,
                     false
-                ).apply {
-                    ayahNumberTextView.text = ayah.ayahNumber.toString()
-                    ayahTextView.text = actualAyahText
-                    arabicTypeface?.let { ayahTextView.typeface = it }
-                    ayahTextView.textDirection = View.TEXT_DIRECTION_RTL
-                    ayahNumberTextView.apply {
-                        setBackgroundResource(R.drawable.circle_background)
-                        setTextColor(ContextCompat.getColor(context, android.R.color.white))
-                        gravity = Gravity.CENTER
-                    }
-                    (root.layoutParams as? MarginLayoutParams)?.bottomMargin = 16.dpToPx(context)
-                }
+                )
+                ayahBinding.ayahNumberTextView.text = ayah.ayahNumber.toString()
+                ayahBinding.ayahTextView.text = ayah.text
+                ayahBinding.ayahTextView.typeface = arabicTypeface
+                ayahBinding.ayahTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 36f)
                 container.addView(ayahBinding.root)
-                return
             }
-
-            // Normal ayah display
-            val ayahBinding = ItemAyahBinding.inflate(
-                LayoutInflater.from(context),
-                container,
-                false
-            ).apply {
-                ayahNumberTextView.text = ayah.ayahNumber.toString()
-                ayahTextView.text = ayah.text
-                arabicTypeface?.let { ayahTextView.typeface = it }
-                (root.layoutParams as? MarginLayoutParams)?.bottomMargin = 16.dpToPx(context)
-            }
-            container.addView(ayahBinding.root)
         }
 
-        // Helper extension
-        fun Int.dpToPx(context: Context): Int =
-            (this * context.resources.displayMetrics.density).toInt()
+        private fun addNormalAyah(container: ViewGroup, ayah: Ayah, binding: ItemAyahBinding) {
+            with(binding) {
+                ayahNumberTextView.text = ayah.ayahNumber.toString()
+                ayahTextView.text = ayah.text
+                ayahTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 36f)
+                container.addView(root)
+            }
+        }
+
+        private fun isBasmalah(ayah: Ayah): Boolean {
+            return ayah.text.startsWith("بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ") &&
+                    ayah.ayahNumber == 1 &&
+                    ayah.surahNumber != 1 &&
+                    ayah.surahNumber != 9
+        }
+
+        private fun dpToPx(context: Context, dp: Int): Int {
+            return (dp * context.resources.displayMetrics.density).toInt()
+        }
     }
 
     private fun markPageAsRead(pageNumber: Int) {
