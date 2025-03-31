@@ -10,6 +10,21 @@
         <item name="bottomNavigationStyle">@style/MyBottomNavigationStyle</item>
     </style>
 
+    <!-- Add this style to your styles.xml -->
+    <style name="BasmalaText">
+        <item name="android:textSize">26sp</item> <!-- Slightly smaller for density -->
+        <item name="android:lineSpacingMultiplier">0.7</item> <!-- Tighter spacing -->
+        <item name="android:letterSpacing">0.05</item>
+        <item name="android:textColor">@color/basmala_gold</item>
+        <item name="android:background">@drawable/basmala_background</item>
+        <item name="android:paddingVertical">2dp</item>
+        <item name="android:paddingHorizontal">8dp</item>
+        <item name="android:shadowColor">#40000000</item>
+        <item name="android:shadowDx">0</item>
+        <item name="android:shadowDy">1</item>
+        <item name="android:shadowRadius">2</item>
+    </style>
+
     <!-- Custom BottomNavigationView style -->
     <style name="MyBottomNavigationStyle" parent="Widget.MaterialComponents.BottomNavigationView">
         <item name="itemIconTint">@color/text_primary</item>

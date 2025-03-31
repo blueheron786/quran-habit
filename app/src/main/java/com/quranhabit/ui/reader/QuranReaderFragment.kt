@@ -344,16 +344,7 @@ class QuranReaderFragment : Fragment() {
                     ayahNumberTextView.visibility = View.GONE
                     ayahTextView.text = "بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ"
                     ayahTextView.typeface = arabicTypeface
-                    ayahTextView.setShadowLayer(2f, 0f, 1f, Color.parseColor("#40000000"))
-
-                    // Add background and padding
-                    root.setBackgroundResource(R.drawable.basmala_background)
-                    root.setPadding(
-                        dpToPx(container.context, 16),
-                        dpToPx(container.context, 8),
-                        dpToPx(container.context, 16),
-                        dpToPx(container.context, 8)
-                    )
+                    ayahTextView.setTextAppearance(R.style.BasmalaText)
                 }
                 container.addView(basmalahBinding.root)
 
@@ -368,7 +359,6 @@ class QuranReaderFragment : Fragment() {
                     ayahBinding.ayahNumberTextView.text = ayah.ayahNumber.toString()
                     ayahBinding.ayahTextView.text = remainingText
                     ayahBinding.ayahTextView.typeface = arabicTypeface
-                    ayahBinding.ayahTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 36f)
                     container.addView(ayahBinding.root)
                 }
             } else {
