@@ -8,10 +8,12 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.quranhabit.MainActivity
 import com.quranhabit.data.QuranDatabase
 import com.quranhabit.data.dao.StatisticsDao
 import com.quranhabit.databinding.FragmentStatisticsBinding
@@ -39,6 +41,7 @@ class StatisticsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        (activity as? MainActivity)?.setBottomNavVisibility(false)
 
         // Text fields
         viewModel.pagesReadToday.observe(viewLifecycleOwner) { pages ->
@@ -96,6 +99,7 @@ class StatisticsFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        (activity as? MainActivity)?.setBottomNavVisibility(true)
         super.onDestroyView()
         _binding = null
     }

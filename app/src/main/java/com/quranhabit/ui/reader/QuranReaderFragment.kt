@@ -87,7 +87,6 @@ class QuranReaderFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
         (requireActivity() as AppCompatActivity).supportActionBar?.hide()
 
         arabicTypeface = Typeface.createFromAsset(
