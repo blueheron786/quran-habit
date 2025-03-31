@@ -1,6 +1,6 @@
-package com.quranhabit.ui.progress
+package com.quranhabit.ui.statistics
 
-import ReadingProgressViewModel
+import StatisticsViewModel
 import android.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -18,7 +18,7 @@ class ReadingProgressFragment : Fragment() {
     private var _binding: FragmentProgressBinding? = null
     private val binding get() = _binding ?: throw IllegalStateException("Binding accessed after onDestroyView")
 
-    private val viewModel: ReadingProgressViewModel by viewModels {
+    private val viewModel: StatisticsViewModel by viewModels {
         ReadingProgressViewModelFactory(
             QuranDatabase.getDatabase(requireContext()).readingSessionDao()
         )
@@ -67,6 +67,6 @@ class ReadingProgressViewModelFactory(
     private val statisticsDao: StatisticsDao
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return ReadingProgressViewModel(statisticsDao) as T
+        return StatisticsViewModel(statisticsDao) as T
     }
 }

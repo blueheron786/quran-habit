@@ -7,7 +7,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -80,7 +79,6 @@ class SurahListFragment : Fragment() {
         _binding = null
     }
 
-    // Complete SurahAdapter as inner class
     inner class SurahAdapter(
         private val surahList: List<Surah>,
         private val onItemClick: (Surah) -> Unit

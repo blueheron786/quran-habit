@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.quranhabit.ui.hideWithAnimation
-import com.quranhabit.ui.progress.ReadingProgressFragment
+import com.quranhabit.ui.statistics.ReadingProgressFragment
 import com.quranhabit.ui.showWithAnimation
 import com.quranhabit.ui.surah.SurahListFragment
 

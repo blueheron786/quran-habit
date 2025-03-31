@@ -11,9 +11,4 @@ object DateUtils {
     }
 
     fun getTodayDate(): String = formatter.format(Date())
-
-    // Add this to help debugging
-    fun getCurrentDeviceTime(): String {
-        return "Device time: ${Date()} | Timezone: ${TimeZone.getDefault().id}"
-    }
 }

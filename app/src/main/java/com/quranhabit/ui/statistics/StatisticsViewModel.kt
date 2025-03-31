@@ -10,7 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class ReadingProgressViewModel(private val statisticsDao: StatisticsDao) : ViewModel() {
+class StatisticsViewModel(private val statisticsDao: StatisticsDao) : ViewModel() {
     private val _todayProgress = MutableLiveData<Int>()
     val todayProgress: LiveData<Int> = _todayProgress
 
