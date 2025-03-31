@@ -15,7 +15,7 @@
     <color name="green">#00BB00</color>
 
     <!-- basmala -->
-    <color name="basmala_gold">#FFD700</color>
+    <color name="gold">#ffcf33</color>
     <color name="basmala_shadow">#8B4513</color>
     <color name="basmala_highlight">#FFFACD</color>
 </resources>

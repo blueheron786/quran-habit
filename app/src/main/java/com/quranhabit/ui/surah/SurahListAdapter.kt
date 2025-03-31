@@ -88,14 +88,8 @@ class SurahListFragment : Fragment() {
             RecyclerView.ViewHolder(binding.root) {
 
             fun bind(surah: Surah) {
-                val arabicTypeface = Typeface.createFromAsset(
-                    requireContext().assets,
-                    "fonts/ScheherazadeNewRegular.ttf"
-                )
-
                 binding.englishNameTextView.text = surah.englishName
                 binding.arabicNameTextView.text = surah.arabicName
-                binding.arabicNameTextView.typeface = arabicTypeface
 
                 binding.root.setOnClickListener {
                     onItemClick(surah)
