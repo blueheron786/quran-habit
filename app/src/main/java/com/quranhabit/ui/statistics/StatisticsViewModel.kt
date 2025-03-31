@@ -15,6 +15,12 @@ class StatisticsViewModel(private val statisticsDao: StatisticsDao) : ViewModel(
     private val _totalPagesRead = MutableLiveData<Int>()
     val totalPagesRead: LiveData<Int> = _totalPagesRead
 
+    private val _timeReadToday = MutableLiveData<Int>()
+    val timeReadToday: LiveData<Int> = _timeReadToday
+
+    private val _totalTimeRead = MutableLiveData<Int>()
+    val totalTimeRead: LiveData<Int> = _totalTimeRead
+
     init {
         loadProgress()
     }
@@ -31,8 +37,18 @@ class StatisticsViewModel(private val statisticsDao: StatisticsDao) : ViewModel(
                 statisticsDao.getTotalPagesRead()
             }
 
+            val todaysTime = withContext(Dispatchers.IO) {
+                statisticsDao.getTimeReadToday(todayDate) ?: 0
+            }
+
+            val totalTime = withContext(Dispatchers.IO) {
+                statisticsDao.getTotalTimeRead()
+            }
+
             _pagesReadToday.value = todaysProgress
             _totalPagesRead.value = totalProgress
+            _timeReadToday.value = todaysTime
+            _totalTimeRead.value = totalTime
         }
     }
 
@@ -41,6 +57,8 @@ class StatisticsViewModel(private val statisticsDao: StatisticsDao) : ViewModel(
             statisticsDao.resetAllStatistics()
             _pagesReadToday.value = 0
             _totalPagesRead.value = 0
+            _timeReadToday.value = 0
+            _totalTimeRead.value = 0
         }
     }
 }

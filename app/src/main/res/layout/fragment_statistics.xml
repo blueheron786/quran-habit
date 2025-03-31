@@ -12,12 +12,25 @@
         android:textSize="18sp"/>
 
     <TextView
+        android:id="@+id/todayTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Time Today: 0 min" />
+
+    <TextView
         android:id="@+id/totalProgress"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:textColor="@color/text_primary"
         android:textSize="18sp"/>
+
+
+    <TextView
+        android:id="@+id/totalTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Total Time: 0 min" />
 
     <Button
         android:id="@+id/resetButton"

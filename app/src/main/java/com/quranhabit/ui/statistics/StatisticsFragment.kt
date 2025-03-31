@@ -36,9 +36,16 @@ class StatisticsFragment : Fragment() {
             binding.todayProgress.text = "Today: $pages pages"
         }
 
-
         viewModel.totalPagesRead.observe(viewLifecycleOwner) { pages ->
             binding.totalProgress.text = "Total: $pages pages"
+        }
+
+        viewModel.timeReadToday.observe(viewLifecycleOwner) { minutes ->
+            binding.todayTime.text = "Time Today: $minutes min"
+        }
+
+        viewModel.totalTimeRead.observe(viewLifecycleOwner) { minutes ->
+            binding.totalTime.text = "Total Time: $minutes min"
         }
 
         binding.resetButton.setOnClickListener {

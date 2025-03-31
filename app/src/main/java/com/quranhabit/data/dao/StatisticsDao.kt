@@ -20,6 +20,12 @@ interface StatisticsDao {
     @Query("SELECT COALESCE(SUM(pagesRead), 0) FROM pages_read_on_day")
     suspend fun getTotalPagesRead(): Int
 
+    @Query("SELECT SUM(timeRead) FROM pages_read_on_day WHERE date = :date")
+    suspend fun getTimeReadToday(date: String): Int?
+
+    @Query("SELECT COALESCE(SUM(timeRead), 0) FROM pages_read_on_day")
+    suspend fun getTotalTimeRead(): Int
+
     @Query("DELETE FROM pages_read_on_day")
     suspend fun resetAllStatistics()
 }
