@@ -14,7 +14,7 @@ import com.quranhabit.data.QuranDatabase
 import com.quranhabit.data.dao.StatisticsDao
 import com.quranhabit.databinding.FragmentStatisticsBinding
 
-class ReadingProgressFragment : Fragment() {
+class StatisticsFragment : Fragment() {
     private var _binding: FragmentStatisticsBinding? = null
     private val binding get() = _binding ?: throw IllegalStateException("Binding accessed after onDestroyView")
 

@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.quranhabit.ui.hideWithAnimation
-import com.quranhabit.ui.statistics.ReadingProgressFragment
+import com.quranhabit.ui.statistics.StatisticsFragment
 import com.quranhabit.ui.showWithAnimation
 import com.quranhabit.ui.surah.SurahListFragment
 
@@ -24,7 +24,7 @@ class MainActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.navigation_progress -> {
                     supportFragmentManager.beginTransaction()
-                        .replace(R.id.nav_host_fragment, ReadingProgressFragment())
+                        .replace(R.id.nav_host_fragment, StatisticsFragment())
                         .addToBackStack("progress") // This adds the transaction to back stack
                         .commit()
                     true
