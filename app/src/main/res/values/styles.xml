@@ -1,0 +1,20 @@
+<resources>
+    <!-- Base application theme -->
+    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Primary brand color -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryVariant">@color/primary</item>
+        <item name="colorOnPrimary">@color/text_primary</item>
+
+        <!-- Bottom Navigation styling -->
+        <item name="bottomNavigationStyle">@style/MyBottomNavigationStyle</item>
+    </style>
+
+    <!-- Custom BottomNavigationView style -->
+    <style name="MyBottomNavigationStyle" parent="Widget.MaterialComponents.BottomNavigationView">
+        <item name="itemIconTint">@color/text_primary</item>
+        <item name="itemTextColor">@color/text_primary</item>
+        <item name="android:background">@color/background_dark</item>
+        <item name="android:elevation">8dp</item>
+    </style>
+</resources>
