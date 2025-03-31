@@ -1,4 +1,3 @@
-<!-- res/layout/fragment_progress.xml -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -19,4 +18,12 @@
         android:layout_marginTop="16dp"
         android:textColor="@color/text_primary"
         android:textSize="18sp"/>
+
+    <Button
+        android:id="@+id/resetButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="Reset Stats"
+        android:layout_gravity="center_horizontal"/>
 </LinearLayout>

@@ -1,5 +1,6 @@
 package com.quranhabit.ui.progress
 
+import android.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -30,13 +31,28 @@ class ReadingProgressFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewModel.todayProgress.observe(viewLifecycleOwner) { pages ->
+        viewModel.daysProgress.observe(viewLifecycleOwner) { pages ->
             _binding?.todayProgress?.text = "Today: $pages pages"
         }
 
         viewModel.totalProgress.observe(viewLifecycleOwner) { total ->
             _binding?.totalProgress?.text = "Total: $total pages"
         }
+
+        binding.resetButton.setOnClickListener {
+            showResetConfirmationDialog()
+        }
+    }
+
+    private fun showResetConfirmationDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Reset Statistics")
+            .setMessage("Are you sure you want to reset all reading statistics? This cannot be undone.")
+            .setPositiveButton("Yes") { _, _ ->
+                viewModel.resetStatistics()
+            }
+            .setNegativeButton("No", null)
+            .show()
     }
 
     override fun onDestroyView() {

@@ -16,8 +16,11 @@ interface ReadingSessionDao {
     suspend fun getByDate(date: String): ReadingSession?
 
     @Query("SELECT pagesRead FROM reading_sessions WHERE date = :date")
-    fun getTodayProgress(date: String): Flow<Int?>
+    fun getDaysProgress(date: String): Flow<Int?>
 
     @Query("SELECT COALESCE(SUM(pagesRead), 0) FROM reading_sessions")
     fun getTotalPagesRead(): Flow<Int>
+
+    @Query("DELETE FROM reading_sessions")
+    suspend fun resetAllStatistics()
 }
