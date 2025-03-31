@@ -78,7 +78,7 @@ class QuranReaderFragment : Fragment() {
 
         val initialPage = findFirstPageForSurah(currentSurahNumber)
         setupViewPager(initialPage)
-        updateHeader(initialPage)
+        updateHeader(currentSurahNumber, initialPage)
     }
 
     private fun setupViewPager(initialPage: Int) {
@@ -100,7 +100,7 @@ class QuranReaderFragment : Fragment() {
             private var currentPage = -1
 
             override fun onPageSelected(newPage: Int) {
-                updateHeader(newPage)
+                updateHeader(getSurahForPage(newPage).number, newPage)
                 currentPage = newPage
             }
         })
@@ -128,10 +128,10 @@ class QuranReaderFragment : Fragment() {
         }
     }
 
-    private fun updateHeader(position: Int) {
-        val currentSurah = getSurahForPage(position)
-        binding.surahInfoTextView.text = "${currentSurah.number}. ${currentSurah.englishName}"
-        binding.pageInfoTextView.text = "page ${position + 1}"
+    private fun updateHeader(currentSurahNumber: Int, pageNumber: Int) {
+        val currentSurah = SurahRepository.getSurahByNumber(currentSurahNumber)
+        binding.surahInfoTextView.text = "${currentSurah?.number}. ${currentSurah?.englishName}"
+        binding.pageInfoTextView.text = "page ${pageNumber + 1}"
     }
 
     private fun getSurahForPage(position: Int): Surah {
