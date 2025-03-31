@@ -19,6 +19,27 @@
         android:textSize="18sp" />
 
     <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="This Week"
+        android:textSize="18sp"
+        android:layout_marginTop="16dp"/>
+
+    <com.quranhabit.ui.statistics.BarChartView
+        android:id="@+id/weeklyChart"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:layout_marginTop="16dp"/>
+
+    <TextView
+        android:id="@+id/emptyStateTextView"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:gravity="center"
+        android:text="No reading data for this week yet"
+        android:visibility="gone"/>
+
+    <TextView
         android:id="@+id/totalPages"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

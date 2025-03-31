@@ -2,6 +2,7 @@ package com.quranhabit.ui.statistics
 
 import StatisticsViewModel
 import android.app.AlertDialog
+import android.icu.text.SimpleDateFormat
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -14,8 +15,14 @@ import androidx.lifecycle.ViewModelProvider
 import com.quranhabit.data.QuranDatabase
 import com.quranhabit.data.dao.StatisticsDao
 import com.quranhabit.databinding.FragmentStatisticsBinding
+import java.util.Locale
 
 class StatisticsFragment : Fragment() {
+
+    companion object {
+        const val PAGES_PER_DAY_GOAL = 20 // Make sure this is public (no 'private')
+    }
+
     private var _binding: FragmentStatisticsBinding? = null
     private val binding get() = _binding ?: throw IllegalStateException("Binding accessed after onDestroyView")
 
@@ -33,6 +40,7 @@ class StatisticsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Text fields
         viewModel.pagesReadToday.observe(viewLifecycleOwner) { pages ->
             binding.pagesToday.text = "Today: $pages pages"
         }
@@ -53,6 +61,26 @@ class StatisticsFragment : Fragment() {
             binding.totalTime.text = "Total Time: $hours" + "h" + ", $displayMinutes" + "m"
         }
 
+        // Graphs
+        viewModel.weeklyPages.observe(viewLifecycleOwner) { weeklyData ->
+            val values = weeklyData.map { it.pagesRead }
+            val labels = weeklyData.map {
+                SimpleDateFormat("EEE", Locale.getDefault())
+                    .format(SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it.date))
+            }
+            binding.weeklyChart.setData(values, labels)
+
+            // Show/hide empty state if needed
+            if (values.all { it == 0 }) {
+                binding.emptyStateTextView.visibility = View.VISIBLE
+                binding.weeklyChart.visibility = View.GONE
+            } else {
+                binding.emptyStateTextView.visibility = View.GONE
+                binding.weeklyChart.visibility = View.VISIBLE
+            }
+        }
+
+        // Buttonz
         binding.resetButton.setOnClickListener {
             showResetConfirmationDialog()
         }

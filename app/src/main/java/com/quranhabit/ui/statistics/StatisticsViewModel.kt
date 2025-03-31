@@ -3,6 +3,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.quranhabit.data.dao.StatisticsDao
+import com.quranhabit.ui.statistics.DailyPages
 import com.quranhabit.utils.DateUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -21,12 +22,16 @@ class StatisticsViewModel(private val statisticsDao: StatisticsDao) : ViewModel(
     private val _totalTimeRead = MutableLiveData<Int>()
     val totalTimeRead: LiveData<Int> = _totalTimeRead
 
+    private val _weeklyPages = MutableLiveData<List<DailyPages>>()
+    val weeklyPages: LiveData<List<DailyPages>> = _weeklyPages
+
     init {
         loadProgress()
     }
 
     private fun loadProgress() {
         viewModelScope.launch {
+            // Text data
             val todayDate = DateUtils.getTodayDate()
 
             val pagesReadToday = withContext(Dispatchers.IO) {
@@ -49,6 +54,10 @@ class StatisticsViewModel(private val statisticsDao: StatisticsDao) : ViewModel(
             _totalPagesRead.value = totalPagesRead
             _timeReadToday.value = timeReadToday
             _totalTimeRead.value = totalTimeRead
+
+            // Graph data
+            val weeklyData = statisticsDao.getWeeklyPagesRead()
+            _weeklyPages.value = weeklyData
         }
     }
 

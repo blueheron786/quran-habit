@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.quranhabit.data.entity.PagesReadOnDay
+import com.quranhabit.ui.statistics.DailyPages
 
 @Dao
 interface StatisticsDao {
@@ -32,7 +33,25 @@ interface StatisticsDao {
     @Query("SELECT COALESCE(SUM(secondsSpendReading), 0) FROM pages_read_on_day")
     suspend fun getTotalTimeSpent(): Int
 
-
     @Query("DELETE FROM pages_read_on_day")
     suspend fun resetAllStatistics()
+
+    @Query("""
+    WITH dates AS (
+        SELECT date('now', '-' || (rowid-1) || ' days') AS date 
+        FROM (
+            SELECT 1 AS rowid UNION SELECT 2 UNION SELECT 3 
+            UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7
+        )
+    )
+    SELECT 
+        dates.date,
+        COALESCE(pages_read_on_day.pagesRead, 0) AS pagesRead
+    FROM dates
+    LEFT JOIN pages_read_on_day ON dates.date = pages_read_on_day.date
+    ORDER BY dates.date ASC
+""")
+    suspend fun getWeeklyPagesRead(): List<DailyPages>
 }
+
+
