@@ -1,16 +1,24 @@
 package com.quranhabit.ui.reader
 
+import android.R.attr.fragment
 import android.content.Context
 import android.graphics.Typeface
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.util.Log
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewGroup.MarginLayoutParams
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
+import androidx.lifecycle.lifecycleScope
+import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.quranhabit.MainActivity
@@ -22,6 +30,13 @@ import com.quranhabit.databinding.ItemPageBinding
 import com.quranhabit.ui.surah.Ayah
 import com.quranhabit.ui.surah.Surah
 import com.quranhabit.data.SurahRepository
+import com.quranhabit.data.entity.PagesReadOnDay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class QuranReaderFragment : Fragment() {
 
@@ -37,8 +52,23 @@ class QuranReaderFragment : Fragment() {
 
     // Database
     private val database by lazy { QuranDatabase.getDatabase(requireContext()) }
-    private val lastReadDao by lazy { database.lastReadPositionDao() }
-    private val readingSessionDao by lazy { database.readingSessionDao() }
+    private val statisticsDao by lazy { database.statisticsDao() }
+
+    // Checking if we read a page
+    private var pageScrollState = false
+    private var pageTimer: CountDownTimer? = null
+    private var currentPagePosition = -1
+    private var pageReadStates = mutableMapOf<Int, Boolean>() // Track which pages have been marked as read
+    private var isTrackingScroll = false
+    private var currentPageView: View? = null
+    private var pageMarked = false
+
+    companion object {
+        private const val PAGE_READ_DELAY_MS = 3000L
+        private const val PAGE_READ_CHECK_INTERVAL = 1000L
+        private const val SCROLL_THRESHOLD = 0.9f // 90% scroll
+    }
+
 
     private val cachedPages by lazy {
         val json = loadTextFromRaw(R.raw.pages_absolute)
@@ -77,13 +107,10 @@ class QuranReaderFragment : Fragment() {
 
     private fun setupViewPager(initialPage: Int) {
         pageAdapter = QuranPageAdapter(
+            fragment = this,  // Pass fragment reference
             allPages = allPages,
             arabicTypeface = arabicTypeface,
             quranLines = quranLines,
-            onAyahMarked = { surahNumber, ayahNumber ->
-                saveLastReadAyah(surahNumber, ayahNumber)
-            },
-            getFirstLineNumber = ::getFirstLineNumberForSurah
         )
 
         binding.quranPager.adapter = pageAdapter
@@ -91,13 +118,52 @@ class QuranReaderFragment : Fragment() {
         binding.quranPager.setCurrentItem(initialPage, false)
 
         binding.quranPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            private var currentPage = -1
+            private var scrollState = ViewPager2.SCROLL_STATE_IDLE
 
             override fun onPageSelected(newPage: Int) {
+                currentPagePosition = newPage
                 updateHeader(getSurahForPage(newPage).number, newPage)
-                currentPage = newPage
+
+                // Reset states for new page
+                pageScrollState = false
+                pageMarked = false
+
+                // Start new timer if not already marked
+                if (!pageReadStates.getOrDefault(newPage, false)) {
+                    startPageReadTimer(newPage)
+                }
+            }
+
+            override fun onPageScrollStateChanged(state: Int) {
+                scrollState = state
+                if (state == ViewPager2.SCROLL_STATE_IDLE) {
+                    checkPageReadConditions()
+                }
             }
         })
+    }
+
+    private fun checkPageReadConditions() {
+        if (pageScrollState && !pageMarked && !pageReadStates.getOrDefault(currentPagePosition, false)) {
+            markPageAsRead(currentPagePosition)
+            pageMarked = true
+            pageReadStates[currentPagePosition] = true
+            Log.d("PageMark", "✔ read page $currentPagePosition")
+        }
+    }
+
+    private fun startPageReadTimer(pageNumber: Int) {
+        pageTimer?.cancel()
+        pageTimer = object : CountDownTimer(PAGE_READ_DELAY_MS, PAGE_READ_CHECK_INTERVAL) {
+            override fun onTick(millisUntilFinished: Long) {
+                // Optional: You can add periodic checks here if needed
+            }
+
+            override fun onFinish() {
+                checkPageReadConditions()
+            }
+        }.start()
+        Log.d("PageFlow", "Page $pageNumber - Timer started")
     }
 
     private fun updateHeader(currentSurahNumber: Int, pageNumber: Int) {
@@ -147,17 +213,26 @@ class QuranReaderFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        pageTimer?.cancel()
+        isTrackingScroll = false
         super.onDestroyView()
         _binding = null
     }
 
+    private fun showPageReadFeedback() {
+        val snack = Snackbar.make(binding.root, "Page read", Snackbar.LENGTH_SHORT)
+        snack.setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.green))
+        snack.show()
+    }
+
     class QuranPageAdapter(
+        private val fragment: QuranReaderFragment,
         private val allPages: List<List<PageAyahRange>>,
         private val arabicTypeface: Typeface,
-        private val quranLines: List<String>,
-        private val onAyahMarked: (surahNumber: Int, ayahNumber: Int) -> Unit,
-        private val getFirstLineNumber: (Int) -> Int
+        private val quranLines: List<String>
     ) : RecyclerView.Adapter<QuranPageAdapter.PageViewHolder>() {
+
+        private val scrollTrackers = mutableMapOf<Int, ScrollTracker>()
 
         inner class PageViewHolder(val binding: ItemPageBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -170,16 +245,37 @@ class QuranReaderFragment : Fragment() {
             return PageViewHolder(binding)
         }
 
+        private fun getFirstLineNumberForSurah(surahNumber: Int): Int {
+            return allPages.flatten() // Flatten all pages' ayah ranges
+                .firstOrNull { it.surah == surahNumber } // Find first range for this surah
+                ?.start // Get its starting line number
+                ?: 0 // Default to 0 if not found (shouldn't happen)
+        }
+
         override fun onBindViewHolder(holder: PageViewHolder, position: Int) {
             holder.binding.pageContent.removeAllViews()
+
+            // Add each ayah to the page
             allPages[position].forEach { range ->
                 (range.start..range.end).forEach { lineNumber ->
                     val ayah = Ayah(
                         surahNumber = range.surah,
-                        ayahNumber = lineNumber - getFirstLineNumber(range.surah) + 1,
+                        ayahNumber = lineNumber - getFirstLineNumberForSurah(range.surah) + 1,
                         text = quranLines[lineNumber - 1]
                     )
                     addAyahToView(holder.binding.pageContent, ayah)
+                }
+            }
+
+            // Setup scroll tracking
+            val scrollView = holder.binding.root.findViewById<NestedScrollView>(R.id.page_scroll_view)
+            scrollTrackers.getOrPut(position) { ScrollTracker() }.apply {
+                attach(scrollView)
+                onScrollStateChanged = { isScrolled ->
+                    if (position == fragment.currentPagePosition) {
+                        fragment.pageScrollState = isScrolled
+                        fragment.checkPageReadConditions()
+                    }
                 }
             }
         }
@@ -187,24 +283,85 @@ class QuranReaderFragment : Fragment() {
         override fun getItemCount() = allPages.size
 
         private fun addAyahToView(container: ViewGroup, ayah: Ayah) {
+            val context = container.context
             val ayahBinding = ItemAyahBinding.inflate(
-                LayoutInflater.from(container.context),
+                LayoutInflater.from(context),
                 container,
                 false
             ).apply {
+                // Debug output to verify data
+                Log.d("AyahDebug", "Adding Ayah ${ayah.ayahNumber}: ${ayah.text.take(10)}...")
+
                 ayahNumberTextView.text = ayah.ayahNumber.toString()
                 ayahTextView.text = ayah.text
-                ayahTextView.typeface = arabicTypeface
+
+                // Ensure Arabic font is applied
+                arabicTypeface?.let {
+                    ayahTextView.typeface = it
+                }
+
+                // RTL support
                 ayahTextView.textDirection = View.TEXT_DIRECTION_RTL
 
+                // Style ayah number
                 ayahNumberTextView.apply {
                     setBackgroundResource(R.drawable.circle_background)
-                    setTextColor(container.context.getColor(android.R.color.white))
-                    gravity = android.view.Gravity.CENTER
-                    textSize = 12f
+                    setTextColor(ContextCompat.getColor(context, android.R.color.white))
+                    gravity = Gravity.CENTER
                 }
+
+                // Add spacing between ayahs
+                (root.layoutParams as? MarginLayoutParams)?.bottomMargin = 16.dpToPx(context)
             }
+
             container.addView(ayahBinding.root)
+        }
+
+        // Helper extension
+        fun Int.dpToPx(context: Context): Int =
+            (this * context.resources.displayMetrics.density).toInt()
+    }
+
+    private fun markPageAsRead(pageNumber: Int) {
+        val surahNumber = getSurahForPage(pageNumber).number
+        val ayahRanges = allPages[pageNumber]
+
+        // Find the last ayah on this page
+        val lastAyahRange = ayahRanges.last()
+        val lastAyahNumber = lastAyahRange.end - getFirstLineNumberForSurah(lastAyahRange.surah) + 1
+
+        // Save reading progress
+        saveLastReadAyah(surahNumber, lastAyahNumber)
+
+        // Record in database
+        lifecycleScope.launch {
+            val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+
+            // Get existing record for today
+            val existingRecord = statisticsDao.getByDate(currentDate)
+
+            if (existingRecord != null) {
+                // Update existing record
+                statisticsDao.upsert(
+                    existingRecord.copy(
+                        pagesRead = existingRecord.pagesRead + 1
+                    )
+                )
+            } else {
+                // Create new record
+                statisticsDao.upsert(
+                    PagesReadOnDay(
+                        date = currentDate,
+                        pagesRead = 1
+                    )
+                )
+            }
+
+            withContext(Dispatchers.Main) {
+                showPageReadFeedback()
+            }
+
+            Log.d("QuranReader", "Marked page $pageNumber as read")
         }
     }
 }

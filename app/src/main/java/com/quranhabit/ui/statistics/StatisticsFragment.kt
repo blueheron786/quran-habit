@@ -20,7 +20,7 @@ class StatisticsFragment : Fragment() {
 
     private val viewModel: StatisticsViewModel by viewModels {
         ReadingProgressViewModelFactory(
-            QuranDatabase.getDatabase(requireContext()).readingSessionDao()
+            QuranDatabase.getDatabase(requireContext()).statisticsDao()
         )
     }
 

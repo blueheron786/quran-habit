@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView
+    android:id="@+id/page_scroll_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layoutDirection="rtl"
-    android:fillViewport="true">
+    android:fillViewport="true"
+    android:scrollbars="none"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <LinearLayout
         android:id="@+id/pageContent"
@@ -12,4 +14,4 @@
         android:orientation="vertical"
         android:layoutDirection="rtl"
         android:padding="16dp"/>
-</ScrollView>
+</androidx.core.widget.NestedScrollView>

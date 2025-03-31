@@ -15,7 +15,7 @@ import com.quranhabit.data.entity.PagesReadOnDay
     exportSchema = false
 )
 abstract class QuranDatabase : RoomDatabase() {
-    abstract fun readingSessionDao(): StatisticsDao
+    abstract fun statisticsDao(): StatisticsDao
     abstract fun lastReadPositionDao(): LastReadPositionDao
 
     companion object {
