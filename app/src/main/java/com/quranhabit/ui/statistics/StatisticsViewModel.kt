@@ -1,21 +1,19 @@
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.quranhabit.data.dao.StatisticsDao
-import com.quranhabit.data.entity.PagesReadOnDay
 import com.quranhabit.utils.DateUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class StatisticsViewModel(private val statisticsDao: StatisticsDao) : ViewModel() {
-    private val _todayProgress = MutableLiveData<Int>()
-    val todayProgress: LiveData<Int> = _todayProgress
+    private val _pagesReadToday = MutableLiveData<Int>()
+    val pagesReadToday: LiveData<Int> = _pagesReadToday
 
-    private val _totalProgress = MutableLiveData<Int>()
-    val totalProgress: LiveData<Int> = _totalProgress
+    private val _totalPagesRead = MutableLiveData<Int>()
+    val totalPagesRead: LiveData<Int> = _totalPagesRead
 
     init {
         loadProgress()
@@ -33,36 +31,16 @@ class StatisticsViewModel(private val statisticsDao: StatisticsDao) : ViewModel(
                 statisticsDao.getTotalPagesRead()
             }
 
-            _todayProgress.value = todaysProgress
-            _totalProgress.value = totalProgress
-        }
-    }
-
-    fun addTestData() {
-        viewModelScope.launch {
-            try {
-                val todayDate = DateUtils.getTodayDate()
-                withContext(Dispatchers.IO) {
-                    // Either use the simple upsert
-                    statisticsDao.upsert(
-                        PagesReadOnDay(
-                            date = todayDate,
-                            pagesRead = 99
-                        )
-                    )
-                }
-                loadProgress() // Refresh the view
-            } catch (e: Exception) {
-                Log.e("Failed to save: ${e.message}", e.toString())
-            }
+            _pagesReadToday.value = todaysProgress
+            _totalPagesRead.value = totalProgress
         }
     }
 
     fun resetStatistics() {
         viewModelScope.launch {
             statisticsDao.resetAllStatistics()
-            _todayProgress.value = 0
-            _totalProgress.value = 0
+            _pagesReadToday.value = 0
+            _totalPagesRead.value = 0
         }
     }
 }

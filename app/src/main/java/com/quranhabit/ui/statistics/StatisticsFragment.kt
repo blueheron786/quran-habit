@@ -12,10 +12,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.quranhabit.data.QuranDatabase
 import com.quranhabit.data.dao.StatisticsDao
-import com.quranhabit.databinding.FragmentProgressBinding
+import com.quranhabit.databinding.FragmentStatisticsBinding
 
 class ReadingProgressFragment : Fragment() {
-    private var _binding: FragmentProgressBinding? = null
+    private var _binding: FragmentStatisticsBinding? = null
     private val binding get() = _binding ?: throw IllegalStateException("Binding accessed after onDestroyView")
 
     private val viewModel: StatisticsViewModel by viewModels {
@@ -25,19 +25,19 @@ class ReadingProgressFragment : Fragment() {
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        _binding = FragmentProgressBinding.inflate(inflater, container, false)
+        _binding = FragmentStatisticsBinding.inflate(inflater, container, false)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewModel.todayProgress.observe(viewLifecycleOwner) { pages ->
+        viewModel.pagesReadToday.observe(viewLifecycleOwner) { pages ->
             binding.todayProgress.text = "Today: $pages pages"
         }
 
 
-        viewModel.totalProgress.observe(viewLifecycleOwner) { pages ->
+        viewModel.totalPagesRead.observe(viewLifecycleOwner) { pages ->
             binding.totalProgress.text = "Total: $pages pages"
         }
 
