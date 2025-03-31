@@ -3,6 +3,7 @@ package com.quranhabit.ui.statistics
 import StatisticsViewModel
 import android.app.AlertDialog
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -33,19 +34,21 @@ class StatisticsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         viewModel.pagesReadToday.observe(viewLifecycleOwner) { pages ->
-            binding.todayProgress.text = "Today: $pages pages"
+            binding.pagesToday.text = "Today: $pages pages"
         }
 
         viewModel.totalPagesRead.observe(viewLifecycleOwner) { pages ->
-            binding.totalProgress.text = "Total: $pages pages"
+            binding.totalPages.text = "Lifetime: $pages pages"
         }
 
         viewModel.timeReadToday.observe(viewLifecycleOwner) { minutes ->
-            binding.todayTime.text = "Time Today: $minutes min"
+            binding.timeToday.text = "Time Today: $minutes minutes"
         }
 
         viewModel.totalTimeRead.observe(viewLifecycleOwner) { minutes ->
-            binding.totalTime.text = "Total Time: $minutes min"
+            val hours = minutes / 60;
+            var displayMinutes = minutes % 60;
+            binding.totalTime.text = "Lifetime Total Time: $hours hours, $displayMinutes minutes"
         }
 
         binding.resetButton.setOnClickListener {

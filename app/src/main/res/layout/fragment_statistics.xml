@@ -5,32 +5,33 @@
     android:padding="16dp">
 
     <TextView
-        android:id="@+id/todayProgress"
+        android:id="@+id/pagesToday"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textColor="@color/text_primary"
         android:textSize="18sp"/>
 
     <TextView
-        android:id="@+id/todayTime"
-        android:layout_width="wrap_content"
+        android:id="@+id/timeToday"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Time Today: 0 min" />
+        android:textColor="@color/text_primary"
+        android:textSize="18sp" />
 
     <TextView
-        android:id="@+id/totalProgress"
+        android:id="@+id/totalPages"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:textColor="@color/text_primary"
         android:textSize="18sp"/>
 
-
     <TextView
         android:id="@+id/totalTime"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Total Time: 0 min" />
+        android:textColor="@color/text_primary"
+        android:textSize="18sp" />
 
     <Button
         android:id="@+id/resetButton"

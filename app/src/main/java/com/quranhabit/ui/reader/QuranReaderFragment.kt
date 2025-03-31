@@ -1,6 +1,5 @@
 package com.quranhabit.ui.reader
 
-import android.R.attr.fragment
 import android.content.Context
 import android.graphics.Typeface
 import android.os.Bundle
@@ -62,6 +61,9 @@ class QuranReaderFragment : Fragment() {
     private var isTrackingScroll = false
     private var pageMarked = false
 
+    // Total time read
+    private var readingStartTime: Long = 0
+
     companion object {
         private const val PAGE_READ_DELAY_MS = 3000L
         private const val PAGE_READ_CHECK_INTERVAL = 1000L
@@ -118,6 +120,7 @@ class QuranReaderFragment : Fragment() {
             private var scrollState = ViewPager2.SCROLL_STATE_IDLE
 
             override fun onPageSelected(newPage: Int) {
+                //// Page position etc
                 currentPagePosition = newPage
                 updateHeader(getSurahForPage(newPage).number, newPage)
 
@@ -131,6 +134,27 @@ class QuranReaderFragment : Fragment() {
                 // Start new timer if not already marked
                 if (!pageReadStates.getOrDefault(newPage, false)) {
                     startPageReadTimer(newPage)
+                }
+
+                //// Total time read
+                val currentTime = System.currentTimeMillis()
+                if (readingStartTime > 0) {
+                    val secondsSpendReading = ((currentTime - readingStartTime) / 1000).toInt() // Convert ms to seconds
+                    logReadingTime(secondsSpendReading)
+                }
+                readingStartTime = currentTime // Reset for the new page
+            }
+
+            private fun logReadingTime(secondsSpendReading: Int) {
+                val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+
+                lifecycleScope.launch {
+                    val existingRecord = statisticsDao.getByDate(currentDate)
+                    if (existingRecord != null) {
+                        statisticsDao.upsert(existingRecord.copy(secondsSpendReading = existingRecord.secondsSpendReading + secondsSpendReading))
+                    } else {
+                        statisticsDao.upsert(PagesReadOnDay(date = currentDate, pagesRead = 0, secondsSpendReading = secondsSpendReading))
+                    }
                 }
             }
 
@@ -336,6 +360,8 @@ class QuranReaderFragment : Fragment() {
         val lastAyahRange = ayahRanges.last()
         val lastAyahNumber = lastAyahRange.end - getFirstLineNumberForSurah(lastAyahRange.surah) + 1
 
+        val timeSpent = (System.currentTimeMillis() - readingStartTime) / 1000 // Convert ms to seconds
+
         // Save reading progress
         saveLastReadAyah(surahNumber, lastAyahNumber)
 
@@ -350,7 +376,8 @@ class QuranReaderFragment : Fragment() {
                 // Update existing record
                 statisticsDao.upsert(
                     existingRecord.copy(
-                        pagesRead = existingRecord.pagesRead + 1
+                        pagesRead = existingRecord.pagesRead + 1,
+                        secondsSpendReading = existingRecord.secondsSpendReading + timeSpent.toInt()
                     )
                 )
             } else {
@@ -358,7 +385,8 @@ class QuranReaderFragment : Fragment() {
                 statisticsDao.upsert(
                     PagesReadOnDay(
                         date = currentDate,
-                        pagesRead = 1
+                        pagesRead = 1,
+                        secondsSpendReading = 0
                     )
                 )
             }
@@ -367,7 +395,7 @@ class QuranReaderFragment : Fragment() {
                 showPageReadFeedback()
             }
 
-            Log.d("QuranReader", "Marked page $pageNumber as read")
+            Log.d("QuranReader", "Marked page $pageNumber as read with $timeSpent seconds spent")
         }
     }
 }
