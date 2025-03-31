@@ -1,5 +1,6 @@
 package com.quranhabit.ui.progress
 
+import ReadingProgressViewModel
 import android.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -31,12 +32,13 @@ class ReadingProgressFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewModel.daysProgress.observe(viewLifecycleOwner) { pages ->
-            _binding?.todayProgress?.text = "Today: $pages pages"
+        viewModel.todayProgress.observe(viewLifecycleOwner) { pages ->
+            binding.todayProgress.text = "Today: $pages pages"
         }
 
-        viewModel.totalProgress.observe(viewLifecycleOwner) { total ->
-            _binding?.totalProgress?.text = "Total: $total pages"
+
+        viewModel.totalProgress.observe(viewLifecycleOwner) { pages ->
+            binding.totalProgress.text = "Total: $pages pages"
         }
 
         binding.resetButton.setOnClickListener {

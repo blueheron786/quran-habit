@@ -64,7 +64,6 @@ class QuranReaderFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         (requireActivity() as AppCompatActivity).supportActionBar?.hide()
 
         arabicTypeface = Typeface.createFromAsset(
@@ -104,28 +103,6 @@ class QuranReaderFragment : Fragment() {
                 currentPage = newPage
             }
         })
-    }
-
-    private suspend fun trackPageRead(page: Int) {
-        try {
-            // 1. Update daily reading
-            val today = LocalDate.now().toString()
-            val session = readingSessionDao.getByDate(today) ?: ReadingSession(today, 0)
-            readingSessionDao.upsert(session.copy(pagesRead = session.pagesRead + 1))
-
-            // 2. Update last read position
-            val firstAyah = allPages[page].first().start
-            lastReadDao.upsert(
-                LastReadPosition(
-                    surah = getSurahForPage(page).number,
-                    ayah = firstAyah,
-                    page = page,
-                    timestamp = System.currentTimeMillis()
-                )
-            )
-        } catch (e: Exception) {
-            Log.e("QuranReader", "Error tracking page", e)
-        }
     }
 
     private fun updateHeader(currentSurahNumber: Int, pageNumber: Int) {
