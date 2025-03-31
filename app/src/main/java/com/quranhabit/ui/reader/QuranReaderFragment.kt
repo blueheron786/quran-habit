@@ -101,12 +101,6 @@ class QuranReaderFragment : Fragment() {
 
             override fun onPageSelected(newPage: Int) {
                 updateHeader(newPage)
-
-                if (currentPage != -1 && currentPage != newPage) {
-                    viewLifecycleOwner.lifecycleScope.launch {
-                        trackPageRead(newPage)
-                    }
-                }
                 currentPage = newPage
             }
         })
