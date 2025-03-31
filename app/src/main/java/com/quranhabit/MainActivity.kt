@@ -3,7 +3,9 @@ package com.quranhabit
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.quranhabit.ui.hideWithAnimation
 import com.quranhabit.ui.progress.ReadingProgressFragment
+import com.quranhabit.ui.showWithAnimation
 import com.quranhabit.ui.surah.SurahListFragment
 
 class MainActivity : AppCompatActivity() {
@@ -39,6 +41,15 @@ class MainActivity : AppCompatActivity() {
         } else {
             // If no fragments in back stack, proceed with default back button behavior
             super.onBackPressed()
+        }
+    }
+
+    fun setBottomNavVisibility(visible: Boolean) {
+        val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_nav)
+        if (visible) {
+            bottomNav.showWithAnimation()
+        } else {
+            bottomNav.hideWithAnimation()
         }
     }
 }

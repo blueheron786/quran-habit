@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.quranhabit.MainActivity
 import com.quranhabit.R
 import com.quranhabit.data.QuranDatabase
 import com.quranhabit.databinding.FragmentQuranReaderBinding
@@ -164,6 +165,16 @@ class QuranReaderFragment : Fragment() {
 
     private fun loadTextFromRaw(resourceId: Int): String {
         return resources.openRawResource(resourceId).bufferedReader().use { it.readText() }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        (requireActivity() as MainActivity).setBottomNavVisibility(false)
+    }
+
+    override fun onStop() {
+        (requireActivity() as MainActivity).setBottomNavVisibility(true)
+        super.onStop()
     }
 
     override fun onDestroyView() {
