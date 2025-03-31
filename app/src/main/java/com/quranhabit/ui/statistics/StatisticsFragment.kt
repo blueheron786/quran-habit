@@ -41,14 +41,16 @@ class StatisticsFragment : Fragment() {
             binding.totalPages.text = "Lifetime: $pages pages"
         }
 
-        viewModel.timeReadToday.observe(viewLifecycleOwner) { minutes ->
-            binding.timeToday.text = "Time Today: $minutes minutes"
+        viewModel.timeReadToday.observe(viewLifecycleOwner) { seconds ->
+            val minutes = seconds / 60;
+            binding.timeToday.text = "Time Today: $minutes" + "m"
         }
 
-        viewModel.totalTimeRead.observe(viewLifecycleOwner) { minutes ->
+        viewModel.totalTimeRead.observe(viewLifecycleOwner) { seconds ->
+            val minutes = seconds / 60;
             val hours = minutes / 60;
             var displayMinutes = minutes % 60;
-            binding.totalTime.text = "Lifetime Total Time: $hours hours, $displayMinutes minutes"
+            binding.totalTime.text = "Total Time: $hours" + "h" + ", $displayMinutes" + "m"
         }
 
         binding.resetButton.setOnClickListener {
