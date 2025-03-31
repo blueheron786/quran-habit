@@ -28,16 +28,9 @@
     <com.quranhabit.ui.statistics.BarChartView
         android:id="@+id/weeklyChart"
         android:layout_width="match_parent"
-        android:layout_height="300dp"
-        android:layout_marginTop="16dp"/>
-
-    <TextView
-        android:id="@+id/emptyStateTextView"
-        android:layout_width="match_parent"
-        android:layout_height="300dp"
-        android:gravity="center"
-        android:text="No reading data for this week yet"
-        android:visibility="gone"/>
+        android:layout_height="400dp"
+        android:layout_margin="16dp"
+        android:background="@android:color/white"/>
 
     <TextView
         android:id="@+id/totalPages"

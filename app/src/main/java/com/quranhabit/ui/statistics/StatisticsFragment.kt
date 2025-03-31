@@ -72,10 +72,8 @@ class StatisticsFragment : Fragment() {
 
             // Show/hide empty state if needed
             if (values.all { it == 0 }) {
-                binding.emptyStateTextView.visibility = View.VISIBLE
                 binding.weeklyChart.visibility = View.GONE
             } else {
-                binding.emptyStateTextView.visibility = View.GONE
                 binding.weeklyChart.visibility = View.VISIBLE
             }
         }
