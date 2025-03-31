@@ -11,7 +11,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.quranhabit.data.QuranDatabase
-import com.quranhabit.data.dao.ReadingSessionDao
+import com.quranhabit.data.dao.StatisticsDao
 import com.quranhabit.databinding.FragmentProgressBinding
 
 class ReadingProgressFragment : Fragment() {
@@ -64,9 +64,9 @@ class ReadingProgressFragment : Fragment() {
 }
 
 class ReadingProgressViewModelFactory(
-    private val readingSessionDao: ReadingSessionDao
+    private val statisticsDao: StatisticsDao
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return ReadingProgressViewModel(readingSessionDao) as T
+        return ReadingProgressViewModel(statisticsDao) as T
     }
 }

@@ -9,7 +9,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.google.gson.Gson
@@ -23,10 +22,6 @@ import com.quranhabit.databinding.ItemPageBinding
 import com.quranhabit.ui.surah.Ayah
 import com.quranhabit.ui.surah.Surah
 import com.quranhabit.data.SurahRepository
-import com.quranhabit.data.entity.LastReadPosition
-import com.quranhabit.data.entity.ReadingSession
-import kotlinx.coroutines.launch
-import java.time.LocalDate
 
 class QuranReaderFragment : Fragment() {
 

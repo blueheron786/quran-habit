@@ -3,14 +3,14 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.quranhabit.data.dao.ReadingSessionDao
-import com.quranhabit.data.entity.ReadingSession
+import com.quranhabit.data.dao.StatisticsDao
+import com.quranhabit.data.entity.PagesReadOnDay
 import com.quranhabit.utils.DateUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class ReadingProgressViewModel(private val readingSessionDao: ReadingSessionDao) : ViewModel() {
+class ReadingProgressViewModel(private val statisticsDao: StatisticsDao) : ViewModel() {
     private val _todayProgress = MutableLiveData<Int>()
     val todayProgress: LiveData<Int> = _todayProgress
 
@@ -26,11 +26,11 @@ class ReadingProgressViewModel(private val readingSessionDao: ReadingSessionDao)
             val todayDate = DateUtils.getTodayDate()
 
             val todaysProgress = withContext(Dispatchers.IO) {
-                readingSessionDao.getDaysProgress(todayDate) ?: 0
+                statisticsDao.getDaysProgress(todayDate) ?: 0
             }
 
             val totalProgress = withContext(Dispatchers.IO) {
-                readingSessionDao.getTotalPagesRead()
+                statisticsDao.getTotalPagesRead()
             }
 
             _todayProgress.value = todaysProgress
@@ -44,8 +44,8 @@ class ReadingProgressViewModel(private val readingSessionDao: ReadingSessionDao)
                 val todayDate = DateUtils.getTodayDate()
                 withContext(Dispatchers.IO) {
                     // Either use the simple upsert
-                    readingSessionDao.upsert(
-                        ReadingSession(
+                    statisticsDao.upsert(
+                        PagesReadOnDay(
                             date = todayDate,
                             pagesRead = 99
                         )
@@ -60,7 +60,7 @@ class ReadingProgressViewModel(private val readingSessionDao: ReadingSessionDao)
 
     fun resetStatistics() {
         viewModelScope.launch {
-            readingSessionDao.resetAllStatistics()
+            statisticsDao.resetAllStatistics()
             _todayProgress.value = 0
             _totalProgress.value = 0
         }
