@@ -29,26 +29,26 @@ class StatisticsViewModel(private val statisticsDao: StatisticsDao) : ViewModel(
         viewModelScope.launch {
             val todayDate = DateUtils.getTodayDate()
 
-            val todaysProgress = withContext(Dispatchers.IO) {
-                statisticsDao.getDaysProgress(todayDate) ?: 0
+            val pagesReadToday = withContext(Dispatchers.IO) {
+                statisticsDao.getPagesReadOnDay(todayDate) ?: 0
             }
 
-            val totalProgress = withContext(Dispatchers.IO) {
+            val totalPagesRead = withContext(Dispatchers.IO) {
                 statisticsDao.getTotalPagesRead()
             }
 
-            val todaysTime = withContext(Dispatchers.IO) {
+            val timeReadToday = withContext(Dispatchers.IO) {
                 statisticsDao.getTimeReadToday(todayDate) ?: 0
             }
 
-            val totalTime = withContext(Dispatchers.IO) {
+            val totalTimeRead = withContext(Dispatchers.IO) {
                 statisticsDao.getTotalTimeRead()
             }
 
-            _pagesReadToday.value = todaysProgress
-            _totalPagesRead.value = totalProgress
-            _timeReadToday.value = todaysTime
-            _totalTimeRead.value = totalTime
+            _pagesReadToday.value = pagesReadToday
+            _totalPagesRead.value = totalPagesRead
+            _timeReadToday.value = timeReadToday
+            _totalTimeRead.value = totalTimeRead
         }
     }
 

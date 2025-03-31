@@ -15,7 +15,7 @@ interface StatisticsDao {
     suspend fun getByDate(date: String): PagesReadOnDay?
 
     @Query("SELECT SUM(pagesRead) FROM pages_read_on_day WHERE date = :date")
-    suspend fun getDaysProgress(date: String): Int?
+    suspend fun getPagesReadOnDay(date: String): Int?
 
     @Query("SELECT COALESCE(SUM(pagesRead), 0) FROM pages_read_on_day")
     suspend fun getTotalPagesRead(): Int
