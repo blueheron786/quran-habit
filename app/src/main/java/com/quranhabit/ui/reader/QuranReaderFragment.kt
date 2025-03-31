@@ -60,15 +60,12 @@ class QuranReaderFragment : Fragment() {
     private var currentPagePosition = -1
     private var pageReadStates = mutableMapOf<Int, Boolean>() // Track which pages have been marked as read
     private var isTrackingScroll = false
-    private var currentPageView: View? = null
     private var pageMarked = false
 
     companion object {
         private const val PAGE_READ_DELAY_MS = 3000L
         private const val PAGE_READ_CHECK_INTERVAL = 1000L
-        private const val SCROLL_THRESHOLD = 0.9f // 90% scroll
     }
-
 
     private val cachedPages by lazy {
         val json = loadTextFromRaw(R.raw.pages_absolute)
@@ -128,6 +125,9 @@ class QuranReaderFragment : Fragment() {
                 pageScrollState = false
                 pageMarked = false
 
+                // Cancel any existing timer
+                pageTimer?.cancel()
+
                 // Start new timer if not already marked
                 if (!pageReadStates.getOrDefault(newPage, false)) {
                     startPageReadTimer(newPage)
@@ -137,7 +137,8 @@ class QuranReaderFragment : Fragment() {
             override fun onPageScrollStateChanged(state: Int) {
                 scrollState = state
                 if (state == ViewPager2.SCROLL_STATE_IDLE) {
-                    checkPageReadConditions()
+                    // Only check conditions, don't mark yet
+                    Log.d("PageFlow", "Page settled - scroll: $pageScrollState, timer: ${pageTimer == null}")
                 }
             }
         })
@@ -145,10 +146,15 @@ class QuranReaderFragment : Fragment() {
 
     private fun checkPageReadConditions() {
         if (pageScrollState && !pageMarked && !pageReadStates.getOrDefault(currentPagePosition, false)) {
-            markPageAsRead(currentPagePosition)
-            pageMarked = true
-            pageReadStates[currentPagePosition] = true
-            Log.d("PageMark", "✔ read page $currentPagePosition")
+            // Only mark if timer has completed
+            if (pageTimer == null) {
+                markPageAsRead(currentPagePosition)
+                pageMarked = true
+                pageReadStates[currentPagePosition] = true
+                Log.d("PageMark", "✔ Marked page $currentPagePosition (after delay)")
+            } else {
+                Log.d("PageMark", "☑ Page $currentPagePosition ready (waiting for timer)")
+            }
         }
     }
 
@@ -156,11 +162,14 @@ class QuranReaderFragment : Fragment() {
         pageTimer?.cancel()
         pageTimer = object : CountDownTimer(PAGE_READ_DELAY_MS, PAGE_READ_CHECK_INTERVAL) {
             override fun onTick(millisUntilFinished: Long) {
-                // Optional: You can add periodic checks here if needed
+                // Optional progress updates
             }
 
             override fun onFinish() {
-                checkPageReadConditions()
+                pageTimer = null // Clear timer when done
+                if (pageScrollState && !pageMarked) {
+                    checkPageReadConditions()
+                }
             }
         }.start()
         Log.d("PageFlow", "Page $pageNumber - Timer started")
@@ -289,9 +298,6 @@ class QuranReaderFragment : Fragment() {
                 container,
                 false
             ).apply {
-                // Debug output to verify data
-                Log.d("AyahDebug", "Adding Ayah ${ayah.ayahNumber}: ${ayah.text.take(10)}...")
-
                 ayahNumberTextView.text = ayah.ayahNumber.toString()
                 ayahTextView.text = ayah.text
 
