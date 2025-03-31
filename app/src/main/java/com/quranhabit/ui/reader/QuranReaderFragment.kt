@@ -217,8 +217,6 @@ class QuranReaderFragment : Fragment() {
                 ayahTextView.typeface = arabicTypeface
                 ayahTextView.textDirection = View.TEXT_DIRECTION_RTL
 
-                markButton.setOnClickListener { onAyahMarked(ayah.surahNumber, ayah.ayahNumber) }
-
                 ayahNumberTextView.apply {
                     setBackgroundResource(R.drawable.circle_background)
                     setTextColor(container.context.getColor(android.R.color.white))

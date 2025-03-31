@@ -28,23 +28,4 @@
         android:layoutDirection="rtl"
         android:textDirection="rtl" />
 
-    <Button
-        android:id="@+id/markButton"
-        android:layout_width="wrap_content"
-        android:layout_height="28dp"
-        android:text="Mark"
-        android:textSize="12sp"
-        android:textColor="@color/text_primary"
-        android:background="@drawable/rounded_button"
-        android:backgroundTint="@color/primary"
-        android:paddingHorizontal="12dp"
-        android:paddingVertical="0dp"
-        android:layout_marginTop="4dp"
-        android:layout_marginBottom="16dp"
-        android:layout_gravity="end"
-        android:minHeight="0dp"
-        android:minWidth="0dp"
-        android:insetTop="0dp"
-        android:insetBottom="0dp" />
-
 </LinearLayout>
