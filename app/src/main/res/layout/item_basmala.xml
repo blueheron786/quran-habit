@@ -5,7 +5,7 @@
     android:layout_height="wrap_content"
     android:text="بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ"
     android:textSize="26sp"
-    android:fontFamily="@font/scheherazade_new_regular"
+    android:fontFamily="@font/mushaf"
     android:textColor="@color/gold"
     android:background="@drawable/basmala_background"
     android:gravity="center"

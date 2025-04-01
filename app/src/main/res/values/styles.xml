@@ -13,7 +13,7 @@
     <style name="BasmalaText">
         <item name="android:textSize">26sp</item> <!-- Slightly smaller -->
         <item name="android:lineSpacingMultiplier">0.7</item> <!-- Tighter line spacing -->
-        <item name="android:fontFamily">@font/scheherazade_new</item>
+        <item name="android:fontFamily">@font/mushaf</item>
         <item name="android:textColor">@color/gold</item>
         <item name="android:background">@drawable/basmala_background</item>
         <item name="android:includeFontPadding">false</item> <!-- Crucial -->

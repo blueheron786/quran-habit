@@ -22,7 +22,7 @@
         android:id="@+id/ayahTextView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fontFamily="@font/scheherazade_new"
+        android:fontFamily="@font/mushaf"
         android:textColor="@color/text_primary"
         android:textSize="33sp"
         android:paddingTop="4dp"
