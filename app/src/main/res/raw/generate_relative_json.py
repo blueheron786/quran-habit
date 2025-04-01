@@ -1,6 +1,20 @@
 import json
 
-def convert_to_absolute(pages_path, quran_text_path, output_path):
+def convert_to_absolute(pages_path, output_path, quran_src_path, quran_text_path):
+    ###
+    # REMOVE stuff we can't RENDER correctly
+    replace_these = [["و۟", "و"]]
+    with open(quran_src_path, 'r', encoding='utf-8') as f:
+        quran_lines = f.read()
+    
+    for glyph in replace_these:
+        quran_lines = quran_lines.replace(glyph[0], glyph[1])
+
+    with open(quran_text_path, 'w', encoding='utf-8') as f:
+        quran_lines = f.write(quran_lines)
+    #
+    ###
+
     # Load the Quran text to count total lines
     with open(quran_text_path, 'r', encoding='utf-8') as f:
         quran_lines = [line.strip() for line in f if line.strip()]
@@ -52,6 +66,7 @@ def convert_to_absolute(pages_path, quran_text_path, output_path):
 # Usage:
 convert_to_absolute(
     pages_path='pages.json',
-    quran_text_path='quran_simple_min.txt',
-    output_path='pages_absolute.json'
+    output_path='pages_absolute.json',
+    quran_src_path='/tmp/quran-simple-plain.txt',
+    quran_text_path='quran_text.txt',
 )
