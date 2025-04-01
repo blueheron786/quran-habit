@@ -5,7 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.quranhabit.data.entity.PagesReadOnDay
-import com.quranhabit.ui.statistics.DailyPages
+import com.quranhabit.ui.statistics.DailyData
 
 @Dao
 interface StatisticsDao {
@@ -43,12 +43,13 @@ interface StatisticsDao {
     )
     SELECT 
         dates.date,
-        COALESCE(pages_read_on_day.pagesRead, 0) AS pagesRead
+        COALESCE(pages_read_on_day.pagesRead, 0) AS pagesRead,
+        COALESCE(pages_read_on_day.secondsSpendReading, 0) AS secondsReading
     FROM dates
     LEFT JOIN pages_read_on_day ON dates.date = pages_read_on_day.date
     ORDER BY dates.date ASC
-""")
-    suspend fun getWeeklyPagesRead(): List<DailyPages>
+    """)
+    suspend fun getWeeklyStatsData(): List<DailyData>
 }
 
 

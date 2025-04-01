@@ -4,11 +4,9 @@ import StatisticsViewModel
 import android.app.AlertDialog
 import android.icu.text.SimpleDateFormat
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModel
@@ -65,13 +63,16 @@ class StatisticsFragment : Fragment() {
         }
 
         // Graphs
-        viewModel.weeklyPages.observe(viewLifecycleOwner) { weeklyData ->
-            val values = weeklyData.map { it.pagesRead }
+        viewModel.weeklyData.observe(viewLifecycleOwner) { weeklyData ->
+            val pagesRead = weeklyData.map { it.pagesRead }
+            val secondsReading = weeklyData.map { it.secondsReading }
             val labels = weeklyData.map {
                 SimpleDateFormat("EEE", Locale.getDefault())
                     .format(SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it.date))
             }
-            binding.weeklyChart.setData(values, labels)
+
+            binding.weeklyPagesChart.setData(pagesRead, labels)
+            binding.weeklyTimeChart.setData(secondsReading, labels)
         }
 
         // Buttonz
