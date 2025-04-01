@@ -34,25 +34,21 @@ class StatisticsViewModel(private val statisticsDao: StatisticsDao) : ViewModel(
             // Text data
             val todayDate = DateUtils.getTodayDate()
 
-            val pagesReadToday = withContext(Dispatchers.IO) {
-                statisticsDao.getPagesReadOnDay(todayDate) ?: 0
+            val dataForToday = withContext(Dispatchers.IO) {
+                statisticsDao.getByDate(todayDate)
             }
 
             val totalPagesRead = withContext(Dispatchers.IO) {
                 statisticsDao.getTotalPagesRead()
             }
 
-            val timeReadToday = withContext(Dispatchers.IO) {
-                statisticsDao.getTimeReadToday(todayDate) ?: 0
-            }
-
             val totalTimeRead = withContext(Dispatchers.IO) {
                 statisticsDao.getTotalTimeRead()
             }
 
-            _pagesReadToday.value = pagesReadToday
+            _pagesReadToday.value = dataForToday?.pagesRead ?: 0
             _totalPagesRead.value = totalPagesRead
-            _timeReadToday.value = timeReadToday
+            _timeReadToday.value = dataForToday?.secondsSpendReading ?: 0
             _totalTimeRead.value = totalTimeRead
 
             // Graph data

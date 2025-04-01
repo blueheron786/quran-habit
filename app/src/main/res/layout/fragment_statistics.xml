@@ -28,7 +28,7 @@
     <com.quranhabit.ui.statistics.BarChartView
         android:id="@+id/weeklyChart"
         android:layout_width="match_parent"
-        android:layout_height="400dp"
+        android:layout_height="300dp"
         android:layout_margin="16dp"
         android:background="@color/background_dark"/>
 

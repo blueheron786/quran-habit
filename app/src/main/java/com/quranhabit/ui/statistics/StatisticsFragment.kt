@@ -53,12 +53,12 @@ class StatisticsFragment : Fragment() {
         }
 
         viewModel.timeReadToday.observe(viewLifecycleOwner) { seconds ->
-            val minutes = seconds / 60;
+            val minutes = (seconds ?: 0) / 60;
             binding.timeToday.text = "Time Today: $minutes" + "m"
         }
 
         viewModel.totalTimeRead.observe(viewLifecycleOwner) { seconds ->
-            val minutes = seconds / 60;
+            val minutes = (seconds ?: 0) / 60;
             val hours = minutes / 60;
             var displayMinutes = minutes % 60;
             binding.totalTime.text = "Total Time: $hours" + "h" + ", $displayMinutes" + "m"
