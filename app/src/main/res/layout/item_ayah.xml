@@ -22,7 +22,7 @@
         android:layout_height="wrap_content"
         android:fontFamily="@font/mushaf"
         android:textColor="@color/text_primary"
-        android:textSize="33sp"
+        android:textSize="@dimen/ayah_text_size"
         android:layoutDirection="rtl"
         android:textDirection="rtl" />
     </LinearLayout>
