@@ -97,42 +97,68 @@ class QuranReaderFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         (requireActivity() as AppCompatActivity).supportActionBar?.hide()
-
         super.onViewCreated(view, savedInstanceState)
-        (requireActivity() as AppCompatActivity).supportActionBar?.hide()
 
-        // 1. INITIALIZE DATA FIRST
+        // Initialize data
         allPages = cachedPages.flatten()
         quranLines = loadTextFromRaw(R.raw.quran_text).lines()
 
-        // If resuming, jump to ayah/page
-        val surahNumber = arguments?.getInt("surahNumber", 1) ?: 1
-        val ayahNumber = arguments?.getInt("ayahNumber", 1) ?: 1  // << NEW
-        val pageNumber = arguments?.getInt("pageNumber", 1) ?: 1
-
-        // Scroll to the specific ayah
-        scrollToAyah(surahNumber, ayahNumber)
-
+        // Get the selected surah number from arguments
         currentSurahNumber = arguments?.getInt("surahNumber") ?: 1
-        allPages = cachedPages.flatten()
-        quranLines = loadTextFromRaw(R.raw.quran_text).lines()
+        val ayahNumber = arguments?.getInt("ayahNumber") ?: 1
 
+        // Find the first page of the selected surah
         val initialPage = findFirstPageForSurah(currentSurahNumber)
+
         setupViewPager(initialPage)
         updateHeader(currentSurahNumber, initialPage)
 
-        binding.quranPager.post {
-            scrollToAyah(surahNumber, ayahNumber)
+        // Only scroll to ayah if we're continuing from a saved position
+        if (arguments?.containsKey("ayahNumber") == true) {
+            binding.quranPager.postDelayed({
+                scrollToAyah(currentSurahNumber, ayahNumber)
+            }, 300)
         }
     }
 
     private fun scrollToAyah(surah: Int, ayah: Int) {
         try {
-            val targetPage = findPageForAyah(surah, ayah)
-            binding.quranPager.setCurrentItem(targetPage, false)
+            val targetPage = findPageForAyah(surah, ayah).coerceIn(0, allPages.size - 1)
+
+            // Only change page if necessary
+            if (binding.quranPager.currentItem != targetPage) {
+                binding.quranPager.setCurrentItem(targetPage, false)
+            }
+
+            // Wait for page to settle then scroll to ayah
+            binding.quranPager.postDelayed({
+                try {
+                    val recyclerView = binding.quranPager.getChildAt(0) as? RecyclerView
+                    val viewHolder = recyclerView?.findViewHolderForAdapterPosition(targetPage)
+                    val scrollView = viewHolder?.itemView?.findViewById<NestedScrollView>(R.id.page_scroll_view)
+
+                    scrollView?.post {
+                        try {
+                            // Try finding the ayah view with multiple tag formats for backward compatibility
+                            val ayahView = scrollView.findViewWithTag<View?>("ayah_${surah}_$ayah")
+                                ?: scrollView.findViewWithTag<View?>("ayah_$ayah")
+
+                            ayahView?.let {
+                                scrollView.smoothScrollTo(0, it.top)
+                            } ?: run {
+                                // Fallback to top if ayah not found
+                                scrollView.smoothScrollTo(0, 0)
+                            }
+                        } catch (e: Exception) {
+                            Log.e("QuranReader", "Ayah scroll failed: ${e.message}")
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("QuranReader", "Page setup failed: ${e.message}")
+                }
+            }, 300)
         } catch (e: Exception) {
             Log.e("QuranReader", "Scroll failed: ${e.message}")
-            // Fallback to first page of surah
             binding.quranPager.setCurrentItem(findFirstPageForSurah(surah), false)
         }
     }
@@ -360,7 +386,8 @@ class QuranReaderFragment : Fragment() {
 
         private val scrollTrackers = mutableMapOf<Int, ScrollTracker>()
 
-        inner class PageViewHolder(val binding: ItemPageBinding) : RecyclerView.ViewHolder(binding.root)
+        inner class PageViewHolder(val binding: ItemPageBinding) :
+            RecyclerView.ViewHolder(binding.root)
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PageViewHolder {
             val binding = ItemPageBinding.inflate(
@@ -412,7 +439,8 @@ class QuranReaderFragment : Fragment() {
             }
 
             // Setup scroll tracking
-            val scrollView = holder.binding.root.findViewById<NestedScrollView>(R.id.page_scroll_view)
+            val scrollView =
+                holder.binding.root.findViewById<NestedScrollView>(R.id.page_scroll_view)
             scrollTrackers.getOrPut(position) { ScrollTracker() }.apply {
                 attach(scrollView)
                 onScrollStateChanged = { isScrolled ->
@@ -433,20 +461,18 @@ class QuranReaderFragment : Fragment() {
 
         private fun isBasmala(ayah: Ayah): Boolean {
             return ayah.text.startsWith("بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ") &&
-                ayah.ayahNumber == 1 &&
-                ayah.surahNumber != 1 &&
-                ayah.surahNumber != 9
+                    ayah.ayahNumber == 1 &&
+                    ayah.surahNumber != 1 &&
+                    ayah.surahNumber != 9
         }
 
         private fun addAyahToView(container: ViewGroup, ayah: Ayah) {
             if (isBasmala(ayah)) {
-                // Inflate special basmala layout
+                // Existing basmala handling...
                 val basmalaView = LayoutInflater.from(container.context)
                     .inflate(R.layout.item_basmala, container, false) as TextView
-
                 container.addView(basmalaView)
 
-                // Add remaining text if exists
                 ayah.text.removePrefix("بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ")
                     .trim()
                     .takeIf { it.isNotEmpty() }
@@ -458,10 +484,12 @@ class QuranReaderFragment : Fragment() {
                         )
                         ayahBinding.ayahNumberTextView.text = ayah.ayahNumber.toString()
                         ayahBinding.ayahTextView.text = remainingText
+                        // Set both tag formats for compatibility
+                        ayahBinding.root.tag = "ayah_${ayah.surahNumber}_${ayah.ayahNumber}"
+                        ayahBinding.root.setTag(R.id.ayah_tag, "ayah_${ayah.ayahNumber}")
                         container.addView(ayahBinding.root)
                     }
             } else {
-                // Normal ayah handling
                 val binding = ItemAyahBinding.inflate(
                     LayoutInflater.from(container.context),
                     container,
@@ -469,17 +497,10 @@ class QuranReaderFragment : Fragment() {
                 )
                 binding.ayahNumberTextView.text = ayah.ayahNumber.toString()
                 binding.ayahTextView.text = ayah.text
-                binding.root.tag = "ayah_${ayah.ayahNumber}"
+                // Set both tag formats for compatibility
+                binding.root.tag = "ayah_${ayah.surahNumber}_${ayah.ayahNumber}"
+                binding.root.setTag(R.id.ayah_tag, "ayah_${ayah.ayahNumber}")
                 container.addView(binding.root)
-            }
-        }
-
-        private fun addNormalAyah(container: ViewGroup, ayah: Ayah, binding: ItemAyahBinding) {
-            with(binding) {
-                ayahNumberTextView.text = ayah.ayahNumber.toString()
-                ayahTextView.text = ayah.text
-                ayahTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 36f)
-                container.addView(root)
             }
         }
     }
