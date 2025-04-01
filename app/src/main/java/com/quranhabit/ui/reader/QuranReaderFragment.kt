@@ -99,7 +99,7 @@ class QuranReaderFragment : Fragment() {
 
         // 1. INITIALIZE DATA FIRST
         allPages = cachedPages.flatten()
-        quranLines = loadTextFromRaw(R.raw.quran_uthmani).lines()
+        quranLines = loadTextFromRaw(R.raw.quran_text).lines()
 
         // If resuming, jump to ayah/page
         val surahNumber = arguments?.getInt("surahNumber", 1) ?: 1
@@ -111,7 +111,7 @@ class QuranReaderFragment : Fragment() {
 
         currentSurahNumber = arguments?.getInt("surahNumber") ?: 1
         allPages = cachedPages.flatten()
-        quranLines = loadTextFromRaw(R.raw.quran_uthmani).lines()
+        quranLines = loadTextFromRaw(R.raw.quran_text).lines()
 
         val initialPage = findFirstPageForSurah(currentSurahNumber)
         setupViewPager(initialPage)

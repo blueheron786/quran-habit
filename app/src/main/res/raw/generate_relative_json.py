@@ -52,6 +52,6 @@ def convert_to_absolute(pages_path, quran_text_path, output_path):
 # Usage:
 convert_to_absolute(
     pages_path='pages.json',
-    quran_text_path='quran_uthmani.txt',
+    quran_text_path='quran_simple_min.txt',
     output_path='pages_absolute.json'
 )
