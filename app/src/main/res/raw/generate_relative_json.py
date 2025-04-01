@@ -1,9 +1,22 @@
 import json
 
 def convert_to_absolute(pages_path, output_path, quran_src_path, quran_text_path):
+    letters_with_sukoon = [
+        ["اْ", "ا"], ["بْ", "ب"], ["تْ", "ت"], ["ثْ", "ث"], ["جْ", "ج"],
+        ["حْ", "ح"], ["خْ", "خ"], ["دْ", "د"], ["ذْ", "ذ"], ["رْ", "ر"],
+        ["زْ", "ز"], ["سْ", "س"], ["شْ", "ش"], ["صْ", "ص"], ["ضْ", "ض"],
+        ["طْ", "ط"], ["ظْ", "ظ"], ["عْ", "ع"], ["غْ", "غ"], ["فْ", "ف"],
+        ["قْ", "ق"], ["كْ", "ك"], ["لْ", "ل"], ["مْ", "م"], ["نْ", "ن"],
+        ["هْ", "ه"], ["وْ", "و"], ["يْ", "ي"], ["ءْ", "ء"], ["ؤْ", "ؤ"], ["إْ", "إ"]
+    ]
+
     ###
-    # REMOVE stuff we can't RENDER correctly
-    replace_these = [["و۟", "و"]]
+    # REMOVE stuff we can't RENDER correctly. This almost invisible tiny dot character
+    # is big trouble. Can't see it unless you add a waw or alif...
+    replace_these = [
+        ["و۟", "و"], ["ا۟", "ا"],
+    ] + letters_with_sukoon
+
     with open(quran_src_path, 'r', encoding='utf-8') as f:
         quran_lines = f.read()
     
@@ -67,6 +80,6 @@ def convert_to_absolute(pages_path, output_path, quran_src_path, quran_text_path
 convert_to_absolute(
     pages_path='pages.json',
     output_path='pages_absolute.json',
-    quran_src_path='/tmp/quran-simple-plain.txt',
+    quran_src_path='/tmp/quran-uthmani.txt',
     quran_text_path='quran_text.txt',
 )
