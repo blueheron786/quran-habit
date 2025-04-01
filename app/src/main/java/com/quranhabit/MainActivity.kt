@@ -1,18 +1,25 @@
 package com.quranhabit
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.quranhabit.data.QuranDatabase
+import com.quranhabit.data.repository.LastReadRepository
 import com.quranhabit.ui.hideWithAnimation
+import com.quranhabit.ui.reader.QuranReaderFragment
 import com.quranhabit.ui.statistics.StatisticsFragment
 import com.quranhabit.ui.showWithAnimation
 import com.quranhabit.ui.surah.SurahListFragment
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Initialize default fragment
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
                 .replace(R.id.nav_host_fragment, SurahListFragment())
@@ -20,12 +27,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_nav)
+
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
+                R.id.navigation_continue -> {
+                    navigateToLastReadPosition()
+                    true
+                }
                 R.id.navigation_statistics -> {
                     supportFragmentManager.beginTransaction()
                         .replace(R.id.nav_host_fragment, StatisticsFragment())
-                        .addToBackStack("statistics") // This adds the transaction to back stack
+                        .addToBackStack("statistics")
                         .commit()
                     true
                 }
@@ -34,22 +46,42 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun navigateToLastReadPosition() {
+        lifecycleScope.launch {
+            val position = LastReadRepository(
+                QuranDatabase.getDatabase(this@MainActivity).lastReadPositionDao()
+            ).getLastPosition()
+
+            position?.let {
+                supportFragmentManager.beginTransaction()
+                    .replace(R.id.nav_host_fragment, QuranReaderFragment().apply {
+                        arguments = Bundle().apply {
+                            putInt("surahNumber", it.surah)
+                            putInt("pageNumber", it.page)
+                        }
+                    })
+                    .addToBackStack("reader")
+                    .commit()
+            } ?: Toast.makeText(
+                this@MainActivity,
+                "No recent reading progress",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    // Keep your existing methods
     override fun onBackPressed() {
         if (supportFragmentManager.backStackEntryCount > 0) {
-            // If there are fragments in the back stack, pop them
             supportFragmentManager.popBackStack()
         } else {
-            // If no fragments in back stack, proceed with default back button behavior
             super.onBackPressed()
         }
     }
 
     fun setBottomNavVisibility(visible: Boolean) {
-        val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_nav)
-        if (visible) {
-            bottomNav.showWithAnimation()
-        } else {
-            bottomNav.hideWithAnimation()
+        findViewById<BottomNavigationView>(R.id.bottom_nav).apply {
+            if (visible) showWithAnimation() else hideWithAnimation()
         }
     }
 }

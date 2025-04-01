@@ -30,6 +30,7 @@ import com.quranhabit.ui.surah.Ayah
 import com.quranhabit.ui.surah.Surah
 import com.quranhabit.data.SurahRepository
 import com.quranhabit.data.entity.PagesReadOnDay
+import com.quranhabit.data.repository.LastReadRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -52,6 +53,10 @@ class QuranReaderFragment : Fragment() {
     // Database
     private val database by lazy { QuranDatabase.getDatabase(requireContext()) }
     private val statisticsDao by lazy { database.statisticsDao() }
+    // The cool new kid repository
+    private val lastReadRepo by lazy {
+        LastReadRepository(QuranDatabase.getDatabase(requireContext()).lastReadPositionDao())
+    }
 
     // Checking if we read a page
     private var pageScrollState = false
@@ -375,17 +380,6 @@ class QuranReaderFragment : Fragment() {
                 container.addView(root)
             }
         }
-
-        private fun isBasmalah(ayah: Ayah): Boolean {
-            return ayah.text.startsWith("بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ") &&
-                    ayah.ayahNumber == 1 &&
-                    ayah.surahNumber != 1 &&
-                    ayah.surahNumber != 9
-        }
-
-        private fun dpToPx(context: Context, dp: Int): Int {
-            return (dp * context.resources.displayMetrics.density).toInt()
-        }
     }
 
     private fun markPageAsRead(pageNumber: Int) {
@@ -403,6 +397,8 @@ class QuranReaderFragment : Fragment() {
 
         // Record in database
         lifecycleScope.launch {
+            lastReadRepo.savePosition(surahNumber, lastAyahNumber, pageNumber)
+
             val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
             // Get existing record for today
