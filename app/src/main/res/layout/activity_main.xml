@@ -4,11 +4,11 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Add a static AppBar -->
+    <!-- AppBar -->
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
+        android:layout_height="@dimen/toolbar_height"
         android:background="@color/primary"
         android:elevation="4dp"
         app:layout_constraintTop_toTopOf="parent"
@@ -17,7 +17,7 @@
         app:title="Quran Habit"
         app:titleTextColor="@color/text_primary"/>
 
-    <!-- NavHostFragment -->
+    <!-- NavHostFragment - Make sure it starts below toolbar -->
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/nav_host_fragment"
         android:name="androidx.navigation.fragment.NavHostFragment"
@@ -30,7 +30,7 @@
         app:defaultNavHost="true"
         app:navGraph="@navigation/nav_graph" />
 
-    <!-- Bottom Navigation Bar - now properly constrained -->
+    <!-- Bottom Navigation Bar -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_nav"
         android:layout_width="match_parent"
@@ -43,5 +43,4 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

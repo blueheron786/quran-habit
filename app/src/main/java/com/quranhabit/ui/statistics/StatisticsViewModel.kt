@@ -47,8 +47,8 @@ class StatisticsViewModel(private val statisticsDao: StatisticsDao) : ViewModel(
             }
 
             _pagesReadToday.value = dataForToday?.pagesRead ?: 0
-            _totalPagesRead.value = totalPagesRead
             _timeReadToday.value = dataForToday?.secondsSpendReading ?: 0
+            _totalPagesRead.value = totalPagesRead
             _totalTimeRead.value = totalTimeRead
 
             // Graph data
