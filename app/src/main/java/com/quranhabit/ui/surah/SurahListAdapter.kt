@@ -2,6 +2,7 @@ package com.quranhabit.ui.surah
 
 import android.graphics.Typeface
 import android.os.Bundle
+import android.util.DisplayMetrics
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -44,6 +45,11 @@ class SurahListFragment : Fragment() {
         binding.surahRecyclerView.apply {
             layoutManager = LinearLayoutManager(requireContext())
 
+            // Dynamic bottom padding calculation
+            val bottomPadding = calculateNavigationBarHeight()
+            setPadding(0, 0, 0, bottomPadding)
+            clipToPadding = false // Ensures padding doesn't clip child views
+
             addItemDecoration(
                 DividerItemDecoration(requireContext(), LinearLayoutManager.VERTICAL).apply {
                     setDrawable(ContextCompat.getDrawable(requireContext(), R.drawable.spacer)!!)
@@ -71,6 +77,18 @@ class SurahListFragment : Fragment() {
                         .commit()
                 }
             }
+        }
+    }
+
+    private fun calculateNavigationBarHeight(): Int {
+        val resources = requireContext().resources
+        val resourceId = resources.getIdentifier("navigation_bar_height", "dimen", "android")
+
+        return if (resourceId > 0) {
+            resources.getDimensionPixelSize(resourceId)
+        } else {
+            // Fallback to 56dp (standard navigation bar height) if we can't get the actual height
+            (56 * resources.displayMetrics.density).toInt()
         }
     }
 
