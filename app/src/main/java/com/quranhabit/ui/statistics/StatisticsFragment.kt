@@ -72,13 +72,6 @@ class StatisticsFragment : Fragment() {
                     .format(SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it.date))
             }
             binding.weeklyChart.setData(values, labels)
-
-            // Show/hide empty state if needed
-            if (values.all { it == 0 }) {
-                binding.weeklyChart.visibility = View.GONE
-            } else {
-                binding.weeklyChart.visibility = View.VISIBLE
-            }
         }
 
         // Buttonz
