@@ -65,7 +65,7 @@ class StatisticsFragment : Fragment() {
         // Graphs
         viewModel.weeklyData.observe(viewLifecycleOwner) { weeklyData ->
             val pagesRead = weeklyData.map { it.pagesRead }
-            val secondsReading = weeklyData.map { it.secondsReading }
+            val secondsReading = weeklyData.map { it.secondsReading / 60 }
             val labels = weeklyData.map {
                 SimpleDateFormat("EEE", Locale.getDefault())
                     .format(SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it.date))

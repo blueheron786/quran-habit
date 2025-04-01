@@ -65,6 +65,8 @@ class QuranReaderFragment : Fragment() {
     private var pageReadStates = mutableMapOf<Int, Boolean>() // Track which pages have been marked as read
     private var isTrackingScroll = false
     private var pageMarked = false
+    private var isAtBottom = false
+    private var bottomTimer: CountDownTimer? = null
 
     // Total time read
     private var readingStartTime: Long = 0
@@ -213,31 +215,29 @@ class QuranReaderFragment : Fragment() {
     }
 
     private fun checkPageReadConditions() {
-        if (pageScrollState && !pageMarked && !pageReadStates.getOrDefault(currentPagePosition, false)) {
-            // Only mark if timer has completed
-            if (pageTimer == null) {
-                markPageAsRead(currentPagePosition)
-                pageMarked = true
-                pageReadStates[currentPagePosition] = true
-                Log.d("PageMark", "✔ Marked page $currentPagePosition (after delay)")
-            } else {
-                Log.d("PageMark", "☑ Page $currentPagePosition ready (waiting for timer)")
-            }
+        Log.d("PageConditions", "Checking conditions - scroll:$pageScrollState, marked:$pageMarked, read:${pageReadStates.getOrDefault(currentPagePosition, false)}, bottom:$isAtBottom, timer:${pageTimer == null}")
+
+        // Only need to check if we're at bottom now, since we track scrolling state separately
+        if (!pageMarked &&
+            !pageReadStates.getOrDefault(currentPagePosition, false) &&
+            isAtBottom &&
+            pageTimer == null) {
+
+            Log.d("PageMark", "All conditions met for page $currentPagePosition")
+            markPageAsRead(currentPagePosition)
+            pageMarked = true
+            pageReadStates[currentPagePosition] = true
         }
     }
 
     private fun startPageReadTimer(pageNumber: Int) {
         pageTimer?.cancel()
         pageTimer = object : CountDownTimer(PAGE_READ_DELAY_MS, PAGE_READ_CHECK_INTERVAL) {
-            override fun onTick(millisUntilFinished: Long) {
-                // Optional progress updates
-            }
-
+            override fun onTick(millisUntilFinished: Long) {}
             override fun onFinish() {
-                pageTimer = null // Clear timer when done
-                if (pageScrollState && !pageMarked) {
-                    checkPageReadConditions()
-                }
+                pageTimer = null
+                Log.d("PageTimer", "Page timer completed")
+                checkPageReadConditions()
             }
         }.start()
         Log.d("PageFlow", "Page $pageNumber - Timer started")
@@ -279,6 +279,33 @@ class QuranReaderFragment : Fragment() {
         return resources.openRawResource(resourceId).bufferedReader().use { it.readText() }
     }
 
+
+    private fun handleBottomPositionChange(atBottom: Boolean) {
+        Log.d("BottomState", "Bottom state changed to: $atBottom")
+        isAtBottom = atBottom
+
+        if (atBottom) {
+            // Start or reset the bottom timer
+            bottomTimer?.cancel()
+            bottomTimer = object : CountDownTimer(1000L, 1000L) {
+                override fun onTick(millisUntilFinished: Long) {}
+                override fun onFinish() {
+                    Log.d("BottomTimer", "Bottom timer completed")
+                    if (isAtBottom) { // Double-check we're still at bottom
+                        checkPageReadConditions()
+                    }
+                    bottomTimer = null
+                }
+            }.start()
+            Log.d("BottomTimer", "Started bottom timer")
+        } else {
+            // Not at bottom anymore, cancel timer
+            bottomTimer?.cancel()
+            bottomTimer = null
+            Log.d("BottomTimer", "Cancelled bottom timer")
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         (requireActivity() as MainActivity).setBottomNavVisibility(false)
@@ -291,13 +318,14 @@ class QuranReaderFragment : Fragment() {
 
     override fun onDestroyView() {
         pageTimer?.cancel()
+        bottomTimer?.cancel()
         isTrackingScroll = false
         super.onDestroyView()
         _binding = null
     }
 
     private fun showPageReadFeedback() {
-        val snack = Snackbar.make(binding.root, "Page read", Snackbar.LENGTH_SHORT)
+        val snack = Snackbar.make(binding.root, "✔ Page read", Snackbar.LENGTH_SHORT)
         snack.setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.green))
         snack.show()
     }
@@ -369,6 +397,11 @@ class QuranReaderFragment : Fragment() {
                     if (position == fragment.currentPagePosition) {
                         fragment.pageScrollState = isScrolled
                         fragment.checkPageReadConditions()
+                    }
+                }
+                onScrollPositionChanged = { atBottom ->
+                    if (position == fragment.currentPagePosition) {
+                        fragment.handleBottomPositionChange(atBottom)
                     }
                 }
             }
