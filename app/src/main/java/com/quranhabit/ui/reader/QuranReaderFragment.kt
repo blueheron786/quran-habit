@@ -4,12 +4,14 @@ import android.content.Context
 import android.graphics.Typeface
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.os.Trace.isEnabled
 import android.util.Log
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.widget.NestedScrollView
@@ -292,6 +294,7 @@ class QuranReaderFragment : Fragment() {
         requireContext().getSharedPreferences("QuranPrefs", Context.MODE_PRIVATE).edit()
             .putInt("lastSurah", surahNumber)
             .putInt("lastAyah", ayahNumber)
+            .putInt("lastPage", binding.quranPager.currentItem)
             .apply()
     }
 
@@ -528,6 +531,44 @@ class QuranReaderFragment : Fragment() {
 
             Log.d("QuranReader", "Marked page $pageNumber as read with $timeSpent seconds spent")
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        saveCurrentPosition()
+    }
+
+    private fun saveCurrentPosition() {
+        val currentPage = binding.quranPager.currentItem
+        if (currentPage in allPages.indices) {
+            val surahNumber = getSurahForPage(currentPage).number
+            val ayahRanges = allPages[currentPage]
+
+            // Find the last ayah on this page
+            val lastAyahRange = ayahRanges.last()
+            val lastAyahNumber = lastAyahRange.end - getFirstLineNumberForSurah(lastAyahRange.surah) + 1
+
+            // Save to both SharedPreferences and database
+            saveLastReadAyah(surahNumber, lastAyahNumber)
+
+            lifecycleScope.launch {
+                lastReadRepo.savePosition(surahNumber, lastAyahNumber, currentPage)
+            }
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Proper way to handle back button presses
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                saveCurrentPosition()
+                isEnabled = false
+                requireActivity().onBackPressed()
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(this, callback)
     }
 }
 
