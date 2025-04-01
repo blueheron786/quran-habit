@@ -12,6 +12,10 @@
 
         <!-- Button styles -->
         <item name="materialButtonStyle">@style/Widget.QuranHabit.Button</item>
+
+        <!-- action bar -->
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
     </style>
 
     <style name="Widget.QuranHabit.Button" parent="Widget.MaterialComponents.Button">

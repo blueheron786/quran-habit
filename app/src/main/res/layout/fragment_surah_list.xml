@@ -7,5 +7,4 @@
     android:layout_height="match_parent"
     android:background="@color/background_dark"
     android:paddingHorizontal="8dp"
-    android:clipToPadding="false"
     tools:listitem="@layout/item_surah" />
