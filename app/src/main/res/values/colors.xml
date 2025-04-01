@@ -16,6 +16,5 @@
 
     <!-- basmala -->
     <color name="gold">#ffcf33</color>
-    <color name="basmala_shadow">#8B4513</color>
-    <color name="basmala_highlight">#FFFACD</color>
+    <color name="reddish_brown">#8B4513</color>
 </resources>
