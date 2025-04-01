@@ -94,6 +94,21 @@ class QuranReaderFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         (requireActivity() as AppCompatActivity).supportActionBar?.hide()
 
+        super.onViewCreated(view, savedInstanceState)
+        (requireActivity() as AppCompatActivity).supportActionBar?.hide()
+
+        // 1. INITIALIZE DATA FIRST
+        allPages = cachedPages.flatten()
+        quranLines = loadTextFromRaw(R.raw.quran_uthmani).lines()
+
+        // If resuming, jump to ayah/page
+        val surahNumber = arguments?.getInt("surahNumber", 1) ?: 1
+        val ayahNumber = arguments?.getInt("ayahNumber", 1) ?: 1  // << NEW
+        val pageNumber = arguments?.getInt("pageNumber", 1) ?: 1
+
+        // Scroll to the specific ayah
+        scrollToAyah(surahNumber, ayahNumber)
+
         currentSurahNumber = arguments?.getInt("surahNumber") ?: 1
         allPages = cachedPages.flatten()
         quranLines = loadTextFromRaw(R.raw.quran_uthmani).lines()
@@ -101,6 +116,37 @@ class QuranReaderFragment : Fragment() {
         val initialPage = findFirstPageForSurah(currentSurahNumber)
         setupViewPager(initialPage)
         updateHeader(currentSurahNumber, initialPage)
+
+        binding.quranPager.post {
+            scrollToAyah(surahNumber, ayahNumber)
+        }
+    }
+
+    private fun scrollToAyah(surah: Int, ayah: Int) {
+        try {
+            val targetPage = findPageForAyah(surah, ayah)
+            binding.quranPager.setCurrentItem(targetPage, false)
+        } catch (e: Exception) {
+            Log.e("QuranReader", "Scroll failed: ${e.message}")
+            // Fallback to first page of surah
+            binding.quranPager.setCurrentItem(findFirstPageForSurah(surah), false)
+        }
+    }
+
+    private fun findPageForAyah(surah: Int, ayah: Int): Int {
+        if (!::allPages.isInitialized) return 0
+
+        return allPages.indexOfFirst { page ->
+            page.any { range ->
+                if (range.surah == surah) {
+                    val firstAyah = range.start - getFirstLineNumberForSurah(surah) + 1
+                    val lastAyah = range.end - getFirstLineNumberForSurah(surah) + 1
+                    // Debug output:
+                    Log.d("AyahDebug", "Page ${allPages.indexOf(page)}: Ayahs $firstAyah-$lastAyah")
+                    ayah in firstAyah..lastAyah
+                } else false
+            }
+        }.takeIf { it != -1 } ?: 0
     }
 
     private fun setupViewPager(initialPage: Int) {
@@ -368,6 +414,7 @@ class QuranReaderFragment : Fragment() {
                 )
                 binding.ayahNumberTextView.text = ayah.ayahNumber.toString()
                 binding.ayahTextView.text = ayah.text
+                binding.root.tag = "ayah_${ayah.ayahNumber}"
                 container.addView(binding.root)
             }
         }

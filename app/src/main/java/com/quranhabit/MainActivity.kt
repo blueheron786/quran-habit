@@ -1,11 +1,13 @@
 package com.quranhabit
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.quranhabit.data.QuranDatabase
+import com.quranhabit.data.entity.LastReadPosition
 import com.quranhabit.data.repository.LastReadRepository
 import com.quranhabit.ui.hideWithAnimation
 import com.quranhabit.ui.reader.QuranReaderFragment
@@ -48,25 +50,39 @@ class MainActivity : AppCompatActivity() {
 
     private fun navigateToLastReadPosition() {
         lifecycleScope.launch {
-            val position = LastReadRepository(
-                QuranDatabase.getDatabase(this@MainActivity).lastReadPositionDao()
-            ).getLastPosition()
+            try {
+                val position = LastReadRepository(
+                    QuranDatabase.getDatabase(this@MainActivity).lastReadPositionDao()
+                ).getLastPosition()
 
-            position?.let {
-                supportFragmentManager.beginTransaction()
-                    .replace(R.id.nav_host_fragment, QuranReaderFragment().apply {
-                        arguments = Bundle().apply {
-                            putInt("surahNumber", it.surah)
-                            putInt("pageNumber", it.page)
-                        }
-                    })
-                    .addToBackStack("reader")
-                    .commit()
-            } ?: Toast.makeText(
-                this@MainActivity,
-                "No recent reading progress",
-                Toast.LENGTH_SHORT
-            ).show()
+                if (position != null) {
+                    val args = Bundle().apply {
+                        putInt("surahNumber", position.surah)
+                        putInt("ayahNumber", position.ayah)
+                        putInt("pageNumber", position.page)
+                    }
+
+                    supportFragmentManager.beginTransaction()
+                        .replace(R.id.nav_host_fragment, QuranReaderFragment().apply {
+                            arguments = args
+                        })
+                        .addToBackStack("reader")
+                        .commit()
+                } else {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "No reading history found",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Navigation failed", e)
+                Toast.makeText(
+                    this@MainActivity,
+                    "Error loading reading progress",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         }
     }
 
