@@ -3,7 +3,7 @@
     android:id="@+id/basmalaTextView"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:text="بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ"
+    android:text="بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ"
     android:textSize="26sp"
     android:fontFamily="@font/mushaf"
     android:textColor="@color/gold"

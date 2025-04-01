@@ -377,7 +377,7 @@ class QuranReaderFragment : Fragment() {
         override fun getItemCount() = allPages.size
 
         private fun isBasmala(ayah: Ayah): Boolean {
-            return ayah.text.startsWith("بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ") &&
+            return ayah.text.startsWith("بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ") &&
                 ayah.ayahNumber == 1 &&
                 ayah.surahNumber != 1 &&
                 ayah.surahNumber != 9
@@ -392,7 +392,7 @@ class QuranReaderFragment : Fragment() {
                 container.addView(basmalaView)
 
                 // Add remaining text if exists
-                ayah.text.removePrefix("بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ")
+                ayah.text.removePrefix("بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ")
                     .trim()
                     .takeIf { it.isNotEmpty() }
                     ?.let { remainingText ->
