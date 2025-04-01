@@ -34,8 +34,10 @@ class ScrollTracker {
     fun detach() {
         scrollView?.setOnScrollChangeListener(null as NestedScrollView.OnScrollChangeListener?)
         scrollView = null
+        onScrollStateChanged = null
+        onScrollPositionChanged = null  // Prevent stale callbacks
     }
-
+    
     companion object {
         private const val PIXELS_BUFFER = 16
     }

@@ -166,6 +166,17 @@ class QuranReaderFragment : Fragment() {
             private var scrollState = ViewPager2.SCROLL_STATE_IDLE
 
             override fun onPageSelected(newPage: Int) {
+                // CANCEL ALL TIMERS on page change
+                pageTimer?.cancel()
+                pageTimer = null
+                bottomTimer?.cancel()
+                bottomTimer = null
+
+                // Reset states
+                pageScrollState = false
+                pageMarked = false
+                isAtBottom = false
+
                 //// Page position etc
                 currentPagePosition = newPage
                 updateHeader(getSurahForPage(newPage).number, newPage)
@@ -189,6 +200,15 @@ class QuranReaderFragment : Fragment() {
                     logReadingTime(secondsSpendReading)
                 }
                 readingStartTime = currentTime // Reset for the new page
+
+                // page/timer stuff
+                currentPagePosition = newPage
+                updateHeader(getSurahForPage(newPage).number, newPage)
+
+                // Start fresh timer for the new page
+                if (!pageReadStates.getOrDefault(newPage, false)) {
+                    startPageReadTimer(newPage)
+                }
             }
 
             private fun logReadingTime(secondsSpendReading: Int) {
@@ -281,28 +301,27 @@ class QuranReaderFragment : Fragment() {
 
 
     private fun handleBottomPositionChange(atBottom: Boolean) {
-        Log.d("BottomState", "Bottom state changed to: $atBottom")
         isAtBottom = atBottom
 
         if (atBottom) {
-            // Start or reset the bottom timer
-            bottomTimer?.cancel()
-            bottomTimer = object : CountDownTimer(1000L, 1000L) {
-                override fun onTick(millisUntilFinished: Long) {}
-                override fun onFinish() {
-                    Log.d("BottomTimer", "Bottom timer completed")
-                    if (isAtBottom) { // Double-check we're still at bottom
-                        checkPageReadConditions()
+            // Start fresh 1s timer only if not already running
+            if (bottomTimer == null) {
+                bottomTimer = object : CountDownTimer(1000L, 1000L) {
+                    override fun onTick(millisUntilFinished: Long) {}
+                    override fun onFinish() {
+                        if (isAtBottom) { // Double-check we're still at bottom
+                            checkPageReadConditions()
+                        }
+                        bottomTimer = null
                     }
-                    bottomTimer = null
-                }
-            }.start()
-            Log.d("BottomTimer", "Started bottom timer")
+                }.start()
+                Log.d("BottomTimer", "Started bottom timer")
+            }
         } else {
-            // Not at bottom anymore, cancel timer
+            // User scrolled up → CANCEL timer aggressively
             bottomTimer?.cancel()
             bottomTimer = null
-            Log.d("BottomTimer", "Cancelled bottom timer")
+            Log.d("BottomTimer", "Cancelled bottom timer (user scrolled up)")
         }
     }
 
