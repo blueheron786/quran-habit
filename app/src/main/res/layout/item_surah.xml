@@ -6,7 +6,7 @@
     android:orientation="horizontal"
     android:gravity="center_vertical"
     android:layoutDirection="ltr"
-    android:background="@color/ayah_background"> <!-- Added vertical padding -->
+    android:background="@color/background_darkblue"> <!-- Added vertical padding -->
 
     <!-- English (Left-aligned) -->
     <TextView

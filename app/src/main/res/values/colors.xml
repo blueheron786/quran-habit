@@ -8,8 +8,8 @@
     <color name="text_primary">#FFFFFF</color>
 
     <!-- Background Colors -->
-    <color name="background_dark">#00001E</color>
-    <color name="ayah_background">#000044</color>
+    <color name="background_blue">#00001E</color>
+    <color name="background_darkblue">#000044</color>
 
     <!-- other visual feedback -->
     <color name="green">#00BB00</color>

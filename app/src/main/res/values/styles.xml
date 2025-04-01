@@ -24,7 +24,7 @@
     <style name="MyBottomNavigationStyle" parent="Widget.MaterialComponents.BottomNavigationView">
         <item name="itemIconTint">@color/text_primary</item>
         <item name="itemTextColor">@color/text_primary</item>
-        <item name="android:background">@color/background_dark</item>
+        <item name="android:background">@color/background_blue</item>
         <item name="android:elevation">8dp</item>
     </style>
 </resources>
