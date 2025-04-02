@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Trace.isEnabled
 import android.util.Log
+import android.util.SparseArray
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
@@ -130,33 +131,47 @@ class QuranReaderFragment : Fragment() {
                 binding.quranPager.setCurrentItem(targetPage, false)
             }
 
-            // Wait for page to settle then scroll to ayah
             binding.quranPager.postDelayed({
                 try {
                     val recyclerView = binding.quranPager.getChildAt(0) as? RecyclerView
                     val viewHolder = recyclerView?.findViewHolderForAdapterPosition(targetPage)
                     val scrollView = viewHolder?.itemView?.findViewById<NestedScrollView>(R.id.page_scroll_view)
 
-                    scrollView?.post {
-                        try {
-                            // Try finding the ayah view with multiple tag formats for backward compatibility
-                            val ayahView = scrollView.findViewWithTag<View?>("ayah_${surah}_$ayah")
-                                ?: scrollView.findViewWithTag<View?>("ayah_$ayah")
+                    lifecycleScope.launch {
+                        // Check if we have a saved scroll position for this page
+                        val savedPosition = lastReadRepo.getScrollPosition(targetPage)
 
-                            ayahView?.let {
-                                scrollView.smoothScrollTo(0, it.top)
-                            } ?: run {
-                                // Fallback to top if ayah not found
-                                scrollView.smoothScrollTo(0, 0)
+                        scrollView?.post {
+                            try {
+                                if (savedPosition != null) {
+                                    // Restore saved scroll position
+                                    scrollView.scrollTo(0, savedPosition)
+                                    Log.d("ScrollRestore", "Restored scroll position: $savedPosition for page $targetPage")
+                                } else if (arguments?.containsKey("ayahNumber") == true) {
+                                    // Only scroll to ayah if we're continuing from a saved position
+                                    // and don't have a saved scroll position
+                                    val ayahView = scrollView.findViewWithTag<View?>("ayah_${surah}_$ayah")
+                                        ?: scrollView.findViewWithTag<View?>("ayah_$ayah")
+
+                                    ayahView?.let {
+                                        scrollView.smoothScrollTo(0, it.top)
+                                        Log.d("AyahScroll", "Scrolling to ayah ${surah}:$ayah at position ${it.top}")
+                                    } ?: run {
+                                        // Fallback to top if ayah not found
+                                        scrollView.smoothScrollTo(0, 0)
+                                        Log.d("AyahScroll", "Ayah not found, scrolling to top")
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                Log.e("QuranReader", "Ayah scroll failed: ${e.message}")
+                                scrollView?.scrollTo(0, 0)
                             }
-                        } catch (e: Exception) {
-                            Log.e("QuranReader", "Ayah scroll failed: ${e.message}")
                         }
                     }
                 } catch (e: Exception) {
                     Log.e("QuranReader", "Page setup failed: ${e.message}")
                 }
-            }, 300)
+            }, 300) // Delay to allow page to settle
         } catch (e: Exception) {
             Log.e("QuranReader", "Scroll failed: ${e.message}")
             binding.quranPager.setCurrentItem(findFirstPageForSurah(surah), false)
@@ -384,10 +399,13 @@ class QuranReaderFragment : Fragment() {
         private val quranLines: List<String>
     ) : RecyclerView.Adapter<QuranPageAdapter.PageViewHolder>() {
 
+        private val scrollPositions = SparseArray<Int>()
         private val scrollTrackers = mutableMapOf<Int, ScrollTracker>()
 
         inner class PageViewHolder(val binding: ItemPageBinding) :
-            RecyclerView.ViewHolder(binding.root)
+            RecyclerView.ViewHolder(binding.root) {
+            val scrollTracker = ScrollTracker() // Add this line
+        }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PageViewHolder {
             val binding = ItemPageBinding.inflate(
@@ -439,22 +457,30 @@ class QuranReaderFragment : Fragment() {
             }
 
             // Setup scroll tracking
-            val scrollView =
-                holder.binding.root.findViewById<NestedScrollView>(R.id.page_scroll_view)
-            scrollTrackers.getOrPut(position) { ScrollTracker() }.apply {
-                attach(scrollView)
-                onScrollStateChanged = { isScrolled ->
-                    if (position == fragment.currentPagePosition) {
-                        fragment.pageScrollState = isScrolled
-                        fragment.checkPageReadConditions()
-                    }
-                }
-                onScrollPositionChanged = { atBottom ->
-                    if (position == fragment.currentPagePosition) {
-                        fragment.handleBottomPositionChange(atBottom)
-                    }
+            val scrollView = holder.binding.root.findViewById<NestedScrollView>(R.id.page_scroll_view)
+            holder.scrollTracker.attach(scrollView)
+            holder.scrollTracker.onScrollStateChanged = { isScrolled ->
+                if (position == fragment.currentPagePosition) {
+                    fragment.pageScrollState = isScrolled
+                    fragment.checkPageReadConditions()
                 }
             }
+            holder.scrollTracker.onScrollPositionChanged = { atBottom ->
+                if (position == fragment.currentPagePosition) {
+                    fragment.handleBottomPositionChange(atBottom)
+                }
+            }
+        }
+
+        override fun onViewRecycled(holder: PageViewHolder) {
+            val position = holder.bindingAdapterPosition
+            if (position != RecyclerView.NO_POSITION) {
+                scrollTrackers[position]?.let {
+                    scrollPositions.put(position, it.getScrollY())
+                    it.detach()
+                }
+            }
+            super.onViewRecycled(holder)
         }
 
         override fun getItemCount() = allPages.size
@@ -513,6 +539,11 @@ class QuranReaderFragment : Fragment() {
         val lastAyahRange = ayahRanges.last()
         val lastAyahNumber = lastAyahRange.end - getFirstLineNumberForSurah(lastAyahRange.surah) + 1
 
+        // Get scroll position
+        val recyclerView = binding.quranPager.getChildAt(0) as? RecyclerView
+        val viewHolder = recyclerView?.findViewHolderForAdapterPosition(pageNumber) as? QuranPageAdapter.PageViewHolder
+        val scrollY = viewHolder?.scrollTracker?.getScrollY() ?: 0
+
         val timeSpent = (System.currentTimeMillis() - readingStartTime) / 1000 // Convert ms to seconds
 
         // Save reading progress
@@ -520,7 +551,7 @@ class QuranReaderFragment : Fragment() {
 
         // Record in database
         lifecycleScope.launch {
-            lastReadRepo.savePosition(surahNumber, lastAyahNumber, pageNumber)
+            lastReadRepo.savePosition(surahNumber, lastAyahNumber, pageNumber, scrollY)
 
             val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
@@ -569,11 +600,21 @@ class QuranReaderFragment : Fragment() {
             val lastAyahRange = ayahRanges.last()
             val lastAyahNumber = lastAyahRange.end - getFirstLineNumberForSurah(lastAyahRange.surah) + 1
 
+            // Get current scroll position
+            val recyclerView = binding.quranPager.getChildAt(0) as? RecyclerView
+            val viewHolder = recyclerView?.findViewHolderForAdapterPosition(currentPage) as? QuranPageAdapter.PageViewHolder
+            val scrollY = viewHolder?.scrollTracker?.getScrollY() ?: 0
+
             // Save to both SharedPreferences and database
             saveLastReadAyah(surahNumber, lastAyahNumber)
 
             lifecycleScope.launch {
-                lastReadRepo.savePosition(surahNumber, lastAyahNumber, currentPage)
+                lastReadRepo.savePosition(
+                    surah = surahNumber,
+                    ayah = lastAyahNumber,
+                    page = currentPage,
+                    scrollY = scrollY
+                )
             }
         }
     }

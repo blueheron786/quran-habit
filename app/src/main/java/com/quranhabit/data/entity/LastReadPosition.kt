@@ -9,5 +9,6 @@ data class LastReadPosition(
     val surah: Int,
     val ayah: Int,
     val page: Int,
+    val scrollY: Int,
     val timestamp: Long
 )

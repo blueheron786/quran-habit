@@ -8,6 +8,7 @@ class ScrollTracker {
     var onScrollPositionChanged: ((Boolean) -> Unit)? = null
     private var isScrolling = false
     private var isBottomReached = false
+    private var lastScrollY: Int = 0
 
     fun attach(view: NestedScrollView) {
         scrollView = view
@@ -31,7 +32,23 @@ class ScrollTracker {
         })
     }
 
+    fun getScrollY(): Int {
+        return scrollView?.scrollY ?: 0
+    }
+
+    fun saveScrollPosition() {
+        lastScrollY = scrollView?.scrollY ?: 0
+    }
+
+    fun restoreScrollPosition() {
+        scrollView?.post {
+            scrollView?.scrollTo(0, lastScrollY)
+        }
+    }
+
     fun detach() {
+        saveScrollPosition()
+
         scrollView?.setOnScrollChangeListener(null as NestedScrollView.OnScrollChangeListener?)
         scrollView = null
         onScrollStateChanged = null

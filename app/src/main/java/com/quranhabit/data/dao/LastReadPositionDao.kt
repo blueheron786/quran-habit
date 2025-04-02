@@ -13,4 +13,7 @@ interface LastReadPositionDao {
 
     @Query("SELECT * FROM last_read_position LIMIT 1")
     suspend fun getLastPosition(): LastReadPosition?
+
+    @Query("SELECT scrollY FROM last_read_position WHERE page = :page LIMIT 1")
+    suspend fun getScrollPosition(page: Int): Int?
 }
