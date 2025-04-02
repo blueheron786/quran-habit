@@ -46,6 +46,10 @@ class StatisticsFragment : Fragment() {
             binding.pagesToday.text = "Today: $pages pages"
         }
 
+        viewModel.pagesReadMonth.observe(viewLifecycleOwner) { pages ->
+            binding.pagesMonth.text = "30 days: $pages pages"
+        }
+
         viewModel.totalPagesRead.observe(viewLifecycleOwner) { pages ->
             binding.totalPages.text = "Lifetime: $pages pages"
         }
@@ -63,7 +67,7 @@ class StatisticsFragment : Fragment() {
         }
 
         // Graphs
-        viewModel.weeklyData.observe(viewLifecycleOwner) { weeklyData ->
+        viewModel.monthlyData.observe(viewLifecycleOwner) { weeklyData ->
             val pagesRead = weeklyData.map { it.pagesRead }
             val secondsReading = weeklyData.map { it.secondsReading / 60 }
             val labels = weeklyData.map {
@@ -71,7 +75,7 @@ class StatisticsFragment : Fragment() {
                     .format(SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it.date))
             }
 
-            binding.weeklyPagesChart.setData(pagesRead, labels)
+            binding.monthlyPagesChart.setData(pagesRead, labels)
             binding.weeklyTimeChart.setData(secondsReading, labels)
         }
 

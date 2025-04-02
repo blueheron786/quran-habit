@@ -6,19 +6,31 @@ import android.util.AttributeSet
 import android.view.View
 import androidx.core.content.ContextCompat
 import com.quranhabit.R
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import kotlin.math.max
 import kotlin.math.min
+
 class BarChartView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
+    // Constants
+    private val MAX_VISIBLE_BARS = 30
+
     // Properties
     private var barWidth: Float = 0f
     private var goal: Int = StatisticsFragment.PAGES_PER_DAY_GOAL
-    private var data: List<Int> = emptyList()
-    private var labels: List<String> = emptyList()
+    private var rawData: List<Int> = emptyList()
+    private var rawLabels: List<String> = emptyList()
+
+    private val displayedData: List<Int>
+        get() = if (rawData.size > MAX_VISIBLE_BARS) rawData.takeLast(MAX_VISIBLE_BARS) else rawData
+
+    private val displayedLabels: List<String>
+        get() = if (rawLabels.size > MAX_VISIBLE_BARS) rawLabels.takeLast(MAX_VISIBLE_BARS) else rawLabels
 
     // Paints
     private val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -56,7 +68,7 @@ class BarChartView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        if (data.isEmpty()) return
+        if (displayedData.isEmpty()) return
 
         val width = width.toFloat()
         val height = height.toFloat()
@@ -66,7 +78,7 @@ class BarChartView @JvmOverloads constructor(
         val availableHeight = height - padding * 3 - labelPaint.textSize * 2
         barWidth = min(
             60f,
-            (availableWidth - (padding * (data.size - 1))) / data.size
+            (availableWidth - (padding * (displayedData.size - 1))) / displayedData.size
         )
 
         drawAxes(canvas, width, height, padding, axisPadding)
@@ -97,7 +109,7 @@ class BarChartView @JvmOverloads constructor(
     private fun drawGoalLine(canvas: Canvas, width: Float, height: Float, padding: Float,
                              axisPadding: Float, availableHeight: Float) {
         val goalY = height - padding - labelPaint.textSize * 1.5f -
-                (availableHeight * goal / max(goal, data.maxOrNull() ?: goal))
+                (availableHeight * goal / max(goal, displayedData.maxOrNull() ?: goal))
 
         canvas.drawLine(
             padding + axisPadding,
@@ -113,10 +125,11 @@ class BarChartView @JvmOverloads constructor(
     private fun drawBarsAndLabels(canvas: Canvas, width: Float, height: Float, padding: Float,
                                   axisPadding: Float, availableHeight: Float) {
         val cornerRadius = 20f // Radius for rounded tops
+        val labelFormatter = DateTimeFormatter.ofPattern("d MMM") // Example format: "2 Apr"
 
-        data.forEachIndexed { index, value ->
+        displayedData.forEachIndexed { index, value ->
             val left = padding + axisPadding + index * (barWidth + padding)
-            val barHeight = (availableHeight * value / max(goal, data.maxOrNull() ?: goal))
+            val barHeight = (availableHeight * value / max(goal, displayedData.maxOrNull() ?: goal))
             val top = height - padding - labelPaint.textSize * 1.5f - barHeight
             val right = left + barWidth
             val bottom = height - padding - labelPaint.textSize * 1.5f
@@ -144,7 +157,8 @@ class BarChartView @JvmOverloads constructor(
             }
 
             // Draw day label with perfect centering
-            val dayLabel = labels.getOrNull(index)?.take(3) ?: ""
+            val dateLabel = displayedLabels.getOrNull(index)
+            val dayLabel = dateLabel?.format(labelFormatter) ?: ""
             val labelX = left + barWidth / 2
             val labelY = height - padding - 10f
 
@@ -161,7 +175,7 @@ class BarChartView @JvmOverloads constructor(
         }
 
         // Draw Y-axis labels
-        val maxValue = max(goal, data.maxOrNull() ?: goal)
+        val maxValue = max(goal, displayedData.maxOrNull() ?: goal)
         val yStep = if (maxValue > 0) maxValue / 4 else 1
         for (i in 0..4) {
             val yValue = i * yStep
@@ -177,10 +191,10 @@ class BarChartView @JvmOverloads constructor(
         }
     }
 
-    fun setData(values: List<Int>, labels: List<String>) {
-        require(values.size == labels.size) { "Values and labels must have same size" }
-        this.data = values
-        this.labels = labels
+    fun setData(values: List<Int>, dates: List<String>) {
+        require(values.size == dates.size) { "Values and dates must have the same size" }
+        this.rawData = values
+        this.rawLabels = dates
         invalidate()
     }
 }

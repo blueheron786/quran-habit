@@ -34,22 +34,14 @@ interface StatisticsDao {
     suspend fun resetAllStatistics()
 
     @Query("""
-    WITH dates AS (
-        SELECT date('now', '-' || (rowid-1) || ' days') AS date 
-        FROM (
-            SELECT 1 AS rowid UNION SELECT 2 UNION SELECT 3 
-            UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7
-        )
-    )
-    SELECT 
-        dates.date,
-        COALESCE(pages_read_on_day.pagesRead, 0) AS pagesRead,
-        COALESCE(pages_read_on_day.secondsSpendReading, 0) AS secondsReading
-    FROM dates
-    LEFT JOIN pages_read_on_day ON dates.date = pages_read_on_day.date
-    ORDER BY dates.date ASC
-    """)
-    suspend fun getWeeklyStatsData(): List<DailyData>
+    SELECT strftime('%Y-%m-%d', date('now', '-' || (CAST(:daysParam AS INTEGER) - 1) || ' days')) AS date, 0 AS pagesRead, 0 AS secondsReading
+    UNION ALL
+    SELECT strftime('%Y-%m-%d', date) AS date, pagesRead, secondsSpendReading
+        FROM pages_read_on_day
+        WHERE date >= strftime('%Y-%m-%d', date('now', '-' || (CAST(:daysParam AS INTEGER) - 1) || ' days'))
+    ORDER BY date ASC
+""")
+    suspend fun getTimeRangeStatsData(daysParam: Int): List<DailyData>
 }
 
 

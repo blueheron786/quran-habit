@@ -27,6 +27,13 @@
             android:textSize="18sp"/>
 
         <TextView
+            android:id="@+id/pagesMonth"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp"/>
+
+        <TextView
             android:id="@+id/totalPages"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -34,7 +41,7 @@
             android:textSize="18sp"/>
 
         <com.quranhabit.ui.statistics.BarChartView
-            android:id="@+id/weeklyPagesChart"
+            android:id="@+id/monthlyPagesChart"
             android:layout_width="match_parent"
             android:layout_height="300dp"
             android:layout_margin="16dp"
