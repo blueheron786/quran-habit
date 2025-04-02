@@ -76,16 +76,18 @@ class StatisticsFragment : Fragment() {
                 val dateListPages = dailyDataList.map { LocalDate.parse(it.date, DateTimeFormatter.ISO_DATE) }
                 binding.monthlyPagesChart.goal = 20
                 binding.monthlyPagesChart.displayDays = 30
+                binding.monthlyPagesChart.useNumericLabels = true
                 binding.monthlyPagesChart.setData(pagesReadList, dateListPages)
             }
         }
 
         lifecycleScope.launch {
             viewModel.weeklyTimeData.collectLatest { weeklyTimeDataList ->
-                val timeSpentList = weeklyTimeDataList.map { it.secondsReading / 60 } // Convert seconds to minutes
+                val timeSpentList = weeklyTimeDataList.map { it.secondsReading / 60 }
                 val dateListTime = weeklyTimeDataList.map { LocalDate.parse(it.date, DateTimeFormatter.ISO_DATE) }
                 binding.weeklyTimeChart.goal = 30
                 binding.weeklyTimeChart.displayDays = 7
+                binding.weeklyTimeChart.useNumericLabels = true
                 binding.weeklyTimeChart.setData(timeSpentList, dateListTime)
             }
         }

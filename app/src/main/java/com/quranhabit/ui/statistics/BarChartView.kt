@@ -31,8 +31,14 @@ class BarChartView @JvmOverloads constructor(
             invalidate()
         }
 
+    var useNumericLabels: Boolean = false // New property to control label type
+        set(value) {
+            field = value
+            invalidate()
+        }
+
     // Constants
-    private val MAX_TOTAL_DATA_POINTS = 365 // To prevent memory issues with very large datasets
+    private val MAX_TOTAL_DATA_POINTS = 365
 
     // Internal Properties
     private var barWidth: Float = 0f
@@ -68,7 +74,7 @@ class BarChartView @JvmOverloads constructor(
         color = ContextCompat.getColor(context, R.color.text_primary)
         textSize = 36f
         textAlign = Paint.Align.CENTER
-        isSubpixelText = true // For smoother text rendering
+        isSubpixelText = true
     }
 
     private val goalLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -98,36 +104,15 @@ class BarChartView @JvmOverloads constructor(
     }
 
     private fun drawAxes(canvas: Canvas, width: Float, height: Float, padding: Float, axisPadding: Float) {
-        // Y-axis
-        canvas.drawLine(
-            padding + axisPadding,
-            padding,
-            padding + axisPadding,
-            height - padding - labelPaint.textSize * 1.5f,
-            axisPaint
-        )
-
-        // X-axis
-        canvas.drawLine(
-            padding + axisPadding,
-            height - padding - labelPaint.textSize * 1.5f,
-            width - padding,
-            height - padding - labelPaint.textSize * 1.5f,
-            axisPaint
-        )
+        canvas.drawLine(padding + axisPadding, padding, padding + axisPadding, height - padding - labelPaint.textSize * 1.5f, axisPaint)
+        canvas.drawLine(padding + axisPadding, height - padding - labelPaint.textSize * 1.5f, width - padding, height - padding - labelPaint.textSize * 1.5f, axisPaint)
     }
 
     private fun drawGoalLine(canvas: Canvas, width: Float, height: Float, padding: Float,
                              axisPadding: Float, availableHeight: Float) {
         val goalY = height - padding - labelPaint.textSize * 1.5f -
                 (availableHeight * goal / max(goal, displayedData.maxOrNull() ?: goal))
-        canvas.drawLine(
-            padding + axisPadding,
-            goalY,
-            width - padding,
-            goalY,
-            goalPaint
-        )
+        canvas.drawLine(padding + axisPadding, goalY, width - padding, goalY, goalPaint)
         canvas.drawText("Goal", width - padding - 30f, goalY - 15f, goalLabelPaint)
     }
 
@@ -155,24 +140,17 @@ class BarChartView @JvmOverloads constructor(
             canvas.drawPath(barPath, barPaint)
 
             if (value > 0) {
-                canvas.drawText(
-                    value.toString(),
-                    left + barWidth / 2,
-                    top - 10,
-                    labelPaint
-                )
+                canvas.drawText(value.toString(), left + barWidth / 2, top - 10, labelPaint)
             }
 
-            val dateLabel = displayedLabels.getOrNull(index)
-            val dayLabel = dateLabel?.format(labelFormatter) ?: ""
+            val labelText = if (useNumericLabels) {
+                (index + 1).toString()
+            } else {
+                displayedLabels.getOrNull(index)?.format(labelFormatter) ?: ""
+            }
             val labelX = left + barWidth / 2
             val labelY = height - padding - 10f
-            canvas.drawText(
-                dayLabel,
-                (labelX + 0.5f).toInt() - 0.5f,
-                (labelY + 0.5f).toInt() - 0.5f,
-                labelPaint
-            )
+            canvas.drawText(labelText, (labelX + 0.5f).toInt() - 0.5f, (labelY + 0.5f).toInt() - 0.5f, labelPaint)
         }
 
         val maxValue = max(goal, displayedData.maxOrNull() ?: goal)
@@ -181,25 +159,19 @@ class BarChartView @JvmOverloads constructor(
             val yValue = i * yStep
             val yPos = height - padding - labelPaint.textSize * 1.5f -
                     (availableHeight * yValue / maxValue)
-            canvas.drawText(
-                yValue.toString(),
-                padding + axisPadding - 15f,
-                yPos + labelPaint.textSize / 3,
-                labelPaint
-            )
+            canvas.drawText(yValue.toString(), padding + axisPadding - 15f, yPos + labelPaint.textSize / 3, labelPaint)
         }
     }
 
     fun setData(values: List<Int>, dates: List<LocalDate>) {
         require(values.size == dates.size) { "Values and dates must have the same size" }
-        this.rawData = values.takeLast(MAX_TOTAL_DATA_POINTS) // Limit the total data stored
-        this.rawLabels = dates.takeLast(MAX_TOTAL_DATA_POINTS) // Limit the total labels stored
+        this.rawData = values.takeLast(MAX_TOTAL_DATA_POINTS)
+        this.rawLabels = dates.takeLast(MAX_TOTAL_DATA_POINTS)
         updateDisplayedData()
         invalidate()
     }
 
     private fun updateDisplayedData() {
-        // The 'displayedData' and 'displayedLabels' properties are already calculated based on 'displayDays'
-        // No explicit action needed here, but calling invalidate() after setting 'displayDays' is important.
+        // 'displayedData' and 'displayedLabels' are already calculated based on 'displayDays'
     }
 }
