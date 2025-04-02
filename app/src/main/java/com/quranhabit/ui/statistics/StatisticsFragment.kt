@@ -75,8 +75,10 @@ class StatisticsFragment : Fragment() {
                 val displayDays = binding.monthlyPagesChart.displayDays
                 val latestDataDate = dailyDataList.maxByOrNull { LocalDate.parse(it.date, dateFormatter) }
                     ?.let { LocalDate.parse(it.date, dateFormatter) } ?: LocalDate.now()
-                val startDate = latestDataDate.minusDays(displayDays.toLong() - 1)
-                val endDate = latestDataDate // Use the latest data date as the end
+
+                // Change this to make the latest date the START of the range
+                val endDate = latestDataDate.plusDays(displayDays.toLong() - 1)
+                val startDate = latestDataDate
 
                 val allDatesInRange = generateDateRange(startDate, endDate)
                 val paddedDataMap = padDataWithZerosToMap(dailyDataList)
@@ -95,11 +97,13 @@ class StatisticsFragment : Fragment() {
         // Observe weekly time data
         lifecycleScope.launch {
             viewModel.weeklyTimeData.collectLatest { dailyDataList ->
-                val displayDays = binding.weeklyTimeChart.displayDays // Should be 7
+                val displayDays = binding.weeklyTimeChart.displayDays
                 val latestDataDate = dailyDataList.maxByOrNull { LocalDate.parse(it.date, dateFormatter) }
                     ?.let { LocalDate.parse(it.date, dateFormatter) } ?: LocalDate.now()
-                val startDate = latestDataDate.minusDays(displayDays.toLong() - 1)
-                val endDate = latestDataDate // Use the latest data date as the end
+
+                // Change this to make the latest date the START of the range
+                val endDate = latestDataDate.plusDays(displayDays.toLong() - 1)
+                val startDate = latestDataDate
 
                 val allDatesInRange = generateDateRange(startDate, endDate)
                 val paddedDataMap = padTimeDataWithZerosToMap(dailyDataList)
@@ -110,7 +114,7 @@ class StatisticsFragment : Fragment() {
                 binding.weeklyTimeChart.goal = 30
                 binding.weeklyTimeChart.useNumericLabels = true
                 binding.weeklyTimeChart.barSpacingFactor = 2.5f
-                binding.weeklyTimeChart.displayDays = 7 // Ensure displayDays is set correctly here
+                binding.weeklyTimeChart.displayDays = 7
                 binding.weeklyTimeChart.setData(timeSpentList, dateListWeekly)
             }
         }
