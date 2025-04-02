@@ -10,14 +10,17 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.quranhabit.MainActivity
 import com.quranhabit.data.QuranDatabase
 import com.quranhabit.data.dao.StatisticsDao
-import com.quranhabit.data.entity.PagesReadOnDay
 import com.quranhabit.databinding.FragmentStatisticsBinding
+import com.quranhabit.utils.DateUtils
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.Random
+import java.util.Collections
 
 class StatisticsFragment : Fragment() {
 
@@ -30,6 +33,8 @@ class StatisticsFragment : Fragment() {
         )
     }
 
+    private val dateFormatter = DateTimeFormatter.ISO_DATE
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentStatisticsBinding.inflate(inflater, container, false)
         return binding.root
@@ -39,7 +44,7 @@ class StatisticsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         (activity as? MainActivity)?.setBottomNavVisibility(false)
 
-        // Text fields (observe real data if available)
+        // Text fields (observe real data)
         viewModel.pagesReadToday.observe(viewLifecycleOwner) { pages ->
             binding.pagesToday.text = "Today: $pages pages"
         }
@@ -53,45 +58,62 @@ class StatisticsFragment : Fragment() {
         }
 
         viewModel.timeReadToday.observe(viewLifecycleOwner) { seconds ->
-            val minutes = (seconds ?: 0) / 60;
+            val minutes = seconds / 60
             binding.timeToday.text = "Time Today: $minutes" + "m"
         }
 
         viewModel.totalTimeRead.observe(viewLifecycleOwner) { seconds ->
-            val minutes = (seconds ?: 0) / 60;
-            val hours = minutes / 60;
-            var displayMinutes = minutes % 60;
+            val minutes = seconds / 60
+            val hours = minutes / 60
+            val displayMinutes = minutes % 60
             binding.totalTime.text = "Total Time: $hours" + "h" + ", $displayMinutes" + "m"
         }
 
-        // Generate fake data for testing the view
-        val fakeDays = 30
-        val fakeData = generateFakeReadingDataForView(fakeDays)
-        val fakePagesReadList = fakeData.map { it.pagesRead }
-        val fakeDateList = fakeData.map { LocalDate.parse(it.date, DateTimeFormatter.ISO_DATE) }
+        // Observe monthly pages data
+        lifecycleScope.launch {
+            viewModel.monthlyData.collectLatest { dailyDataList ->
+                val displayDays = binding.monthlyPagesChart.displayDays
+                val latestDataDate = dailyDataList.maxByOrNull { LocalDate.parse(it.date, dateFormatter) }
+                    ?.let { LocalDate.parse(it.date, dateFormatter) } ?: LocalDate.now()
+                val startDate = latestDataDate.minusDays(displayDays.toLong() - 1)
+                val endDate = latestDataDate // Use the latest data date as the end
 
-        // Set the fake data to the monthly pages chart
-        binding.monthlyPagesChart.goal = 20
-        binding.monthlyPagesChart.displayDays = fakeDays
-        binding.monthlyPagesChart.useNumericLabels = true
-        binding.monthlyPagesChart.roundBars = true
-        // Custom label interval for the top chart
-        binding.monthlyPagesChart.labelInterval = 5
-        binding.monthlyPagesChart.setData(fakePagesReadList, fakeDateList)
+                val allDatesInRange = generateDateRange(startDate, endDate)
+                val paddedDataMap = padDataWithZerosToMap(dailyDataList)
 
-        // Generate fake data for the weekly time chart (7 days)
-        val fakeDaysWeekly = 7
-        val fakeDataWeekly = generateFakeReadingDataForView(fakeDaysWeekly)
-        val fakeTimeSpentList = fakeDataWeekly.map { it.secondsSpendReading / 60 }
-        val fakeDateListWeekly = fakeDataWeekly.map { LocalDate.parse(it.date, DateTimeFormatter.ISO_DATE) }
+                val pagesReadList = allDatesInRange.map { paddedDataMap[it] ?: 0 }
+                val dateList = allDatesInRange
 
-        // Set the fake data to the weekly time chart
-        binding.weeklyTimeChart.goal = 30
-        binding.weeklyTimeChart.displayDays = fakeDaysWeekly
-        binding.weeklyTimeChart.useNumericLabels = true
-        // Increased bar spacing for the bottom chart
-        binding.weeklyTimeChart.barSpacingFactor = 2.5f
-        binding.weeklyTimeChart.setData(fakeTimeSpentList, fakeDateListWeekly)
+                binding.monthlyPagesChart.goal = 20
+                binding.monthlyPagesChart.useNumericLabels = true
+                binding.monthlyPagesChart.roundBars = true
+                binding.monthlyPagesChart.labelInterval = 5
+                binding.monthlyPagesChart.setData(pagesReadList, dateList)
+            }
+        }
+
+        // Observe weekly time data
+        lifecycleScope.launch {
+            viewModel.weeklyTimeData.collectLatest { dailyDataList ->
+                val displayDays = binding.weeklyTimeChart.displayDays // Should be 7
+                val latestDataDate = dailyDataList.maxByOrNull { LocalDate.parse(it.date, dateFormatter) }
+                    ?.let { LocalDate.parse(it.date, dateFormatter) } ?: LocalDate.now()
+                val startDate = latestDataDate.minusDays(displayDays.toLong() - 1)
+                val endDate = latestDataDate // Use the latest data date as the end
+
+                val allDatesInRange = generateDateRange(startDate, endDate)
+                val paddedDataMap = padTimeDataWithZerosToMap(dailyDataList)
+
+                val timeSpentList = allDatesInRange.map { paddedDataMap[it] ?: 0 }
+                val dateListWeekly = allDatesInRange
+
+                binding.weeklyTimeChart.goal = 30
+                binding.weeklyTimeChart.useNumericLabels = true
+                binding.weeklyTimeChart.barSpacingFactor = 2.5f
+                binding.weeklyTimeChart.displayDays = 7 // Ensure displayDays is set correctly here
+                binding.weeklyTimeChart.setData(timeSpentList, dateListWeekly)
+            }
+        }
 
         // Buttonz
         binding.resetButton.setOnClickListener {
@@ -99,27 +121,28 @@ class StatisticsFragment : Fragment() {
         }
     }
 
-    private fun generateFakeReadingDataForView(days: Int): List<PagesReadOnDay> {
-        val fakeData = mutableListOf<PagesReadOnDay>()
-        val random = Random()
-        val torontoTimeZone = java.time.ZoneId.of("America/Toronto")
-        val currentDate = LocalDate.now(torontoTimeZone)
-        val dateFormatter = DateTimeFormatter.ISO_DATE
-
-        for (i in 0 until days) {
-            val date = currentDate.minusDays(i.toLong()) // Ensure 'i' is converted to Long
-            val pagesRead = random.nextInt(25)
-            val secondsSpendReading = random.nextInt(3600)
-
-            fakeData.add(
-                PagesReadOnDay(
-                    date = date.format(dateFormatter),
-                    pagesRead = pagesRead,
-                    secondsSpendReading = secondsSpendReading
-                )
-            )
+    private fun generateDateRange(startDate: LocalDate, endDate: LocalDate): List<LocalDate> {
+        val dates = mutableListOf<LocalDate>()
+        var currentDate = startDate
+        while (!currentDate.isAfter(endDate)) {
+            dates.add(currentDate)
+            currentDate = currentDate.plusDays(1)
         }
-        return fakeData
+        return dates
+    }
+
+    private fun padDataWithZerosToMap(actualData: List<DailyData>): Map<LocalDate, Int> {
+        return actualData.associateBy<DailyData, LocalDate, Int>(
+            keySelector = { LocalDate.parse(it.date, dateFormatter) },
+            valueTransform = { it.pagesRead }
+        )
+    }
+
+    private fun padTimeDataWithZerosToMap(actualData: List<DailyData>): Map<LocalDate, Int> {
+        return actualData.associateBy<DailyData, LocalDate, Int>(
+            keySelector = { LocalDate.parse(it.date, dateFormatter) },
+            valueTransform = { it.secondsReading / 60 } // Corrected typo here
+        )
     }
 
     private fun showResetConfirmationDialog() {
