@@ -382,6 +382,7 @@ class QuranReaderFragment : Fragment() {
     override fun onDestroyView() {
         pageTimer?.cancel()
         bottomTimer?.cancel()
+        readingStartTime = 0
         isTrackingScroll = false
         super.onDestroyView()
         _binding = null
@@ -599,7 +600,7 @@ class QuranReaderFragment : Fragment() {
             // Find the last ayah on this page
             val lastAyahRange = ayahRanges.last()
             val lastAyahNumber = lastAyahRange.end - getFirstLineNumberForSurah(lastAyahRange.surah) + 1
-
+            
             // Get current scroll position
             val recyclerView = binding.quranPager.getChildAt(0) as? RecyclerView
             val viewHolder = recyclerView?.findViewHolderForAdapterPosition(currentPage) as? QuranPageAdapter.PageViewHolder
