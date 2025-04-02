@@ -17,20 +17,33 @@ class BarChartView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
-    // Constants
-    private val MAX_VISIBLE_BARS = 30
+    // Properties that can be parameterized
+    var goal: Int = 10 // Default goal
+        set(value) {
+            field = value
+            invalidate()
+        }
 
-    // Properties
+    var displayDays: Int = 30 // Default display duration in days
+        set(value) {
+            field = value
+            updateDisplayedData()
+            invalidate()
+        }
+
+    // Constants
+    private val MAX_TOTAL_DATA_POINTS = 365 // To prevent memory issues with very large datasets
+
+    // Internal Properties
     private var barWidth: Float = 0f
-    private var goal: Int = StatisticsFragment.PAGES_PER_DAY_GOAL
     private var rawData: List<Int> = emptyList()
-    private var rawLabels: List<String> = emptyList()
+    private var rawLabels: List<LocalDate> = emptyList()
 
     private val displayedData: List<Int>
-        get() = if (rawData.size > MAX_VISIBLE_BARS) rawData.takeLast(MAX_VISIBLE_BARS) else rawData
+        get() = if (rawData.size > displayDays) rawData.takeLast(displayDays) else rawData
 
-    private val displayedLabels: List<String>
-        get() = if (rawLabels.size > MAX_VISIBLE_BARS) rawLabels.takeLast(MAX_VISIBLE_BARS) else rawLabels
+    private val displayedLabels: List<LocalDate>
+        get() = if (rawLabels.size > displayDays) rawLabels.takeLast(displayDays) else rawLabels
 
     // Paints
     private val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -67,9 +80,7 @@ class BarChartView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-
         if (displayedData.isEmpty()) return
-
         val width = width.toFloat()
         val height = height.toFloat()
         val padding = 40f
@@ -87,7 +98,7 @@ class BarChartView @JvmOverloads constructor(
     }
 
     private fun drawAxes(canvas: Canvas, width: Float, height: Float, padding: Float, axisPadding: Float) {
-        // Y-axis (pages)
+        // Y-axis
         canvas.drawLine(
             padding + axisPadding,
             padding,
@@ -96,7 +107,7 @@ class BarChartView @JvmOverloads constructor(
             axisPaint
         )
 
-        // X-axis (days)
+        // X-axis
         canvas.drawLine(
             padding + axisPadding,
             height - padding - labelPaint.textSize * 1.5f,
@@ -110,7 +121,6 @@ class BarChartView @JvmOverloads constructor(
                              axisPadding: Float, availableHeight: Float) {
         val goalY = height - padding - labelPaint.textSize * 1.5f -
                 (availableHeight * goal / max(goal, displayedData.maxOrNull() ?: goal))
-
         canvas.drawLine(
             padding + axisPadding,
             goalY,
@@ -118,14 +128,13 @@ class BarChartView @JvmOverloads constructor(
             goalY,
             goalPaint
         )
-
         canvas.drawText("Goal", width - padding - 30f, goalY - 15f, goalLabelPaint)
     }
 
     private fun drawBarsAndLabels(canvas: Canvas, width: Float, height: Float, padding: Float,
                                   axisPadding: Float, availableHeight: Float) {
-        val cornerRadius = 20f // Radius for rounded tops
-        val labelFormatter = DateTimeFormatter.ofPattern("d MMM") // Example format: "2 Apr"
+        val cornerRadius = 20f
+        val labelFormatter = DateTimeFormatter.ofPattern("d MMM")
 
         displayedData.forEachIndexed { index, value ->
             val left = padding + axisPadding + index * (barWidth + padding)
@@ -134,7 +143,6 @@ class BarChartView @JvmOverloads constructor(
             val right = left + barWidth
             val bottom = height - padding - labelPaint.textSize * 1.5f
 
-            // Draw bar with rounded top only
             val barPath = Path().apply {
                 moveTo(left, bottom)
                 lineTo(left, top + cornerRadius)
@@ -146,7 +154,6 @@ class BarChartView @JvmOverloads constructor(
             }
             canvas.drawPath(barPath, barPaint)
 
-            // Draw value label if > 0
             if (value > 0) {
                 canvas.drawText(
                     value.toString(),
@@ -156,32 +163,24 @@ class BarChartView @JvmOverloads constructor(
                 )
             }
 
-            // Draw day label with perfect centering
             val dateLabel = displayedLabels.getOrNull(index)
             val dayLabel = dateLabel?.format(labelFormatter) ?: ""
             val labelX = left + barWidth / 2
             val labelY = height - padding - 10f
-
-            // Snap to pixel for crisp rendering
-            val snappedX = (labelX + 0.5f).toInt() - 0.5f
-            val snappedY = (labelY + 0.5f).toInt() - 0.5f
-
             canvas.drawText(
                 dayLabel,
-                snappedX,
-                snappedY,
+                (labelX + 0.5f).toInt() - 0.5f,
+                (labelY + 0.5f).toInt() - 0.5f,
                 labelPaint
             )
         }
 
-        // Draw Y-axis labels
         val maxValue = max(goal, displayedData.maxOrNull() ?: goal)
         val yStep = if (maxValue > 0) maxValue / 4 else 1
         for (i in 0..4) {
             val yValue = i * yStep
             val yPos = height - padding - labelPaint.textSize * 1.5f -
                     (availableHeight * yValue / maxValue)
-
             canvas.drawText(
                 yValue.toString(),
                 padding + axisPadding - 15f,
@@ -191,10 +190,16 @@ class BarChartView @JvmOverloads constructor(
         }
     }
 
-    fun setData(values: List<Int>, dates: List<String>) {
+    fun setData(values: List<Int>, dates: List<LocalDate>) {
         require(values.size == dates.size) { "Values and dates must have the same size" }
-        this.rawData = values
-        this.rawLabels = dates
+        this.rawData = values.takeLast(MAX_TOTAL_DATA_POINTS) // Limit the total data stored
+        this.rawLabels = dates.takeLast(MAX_TOTAL_DATA_POINTS) // Limit the total labels stored
+        updateDisplayedData()
         invalidate()
+    }
+
+    private fun updateDisplayedData() {
+        // The 'displayedData' and 'displayedLabels' properties are already calculated based on 'displayDays'
+        // No explicit action needed here, but calling invalidate() after setting 'displayDays' is important.
     }
 }

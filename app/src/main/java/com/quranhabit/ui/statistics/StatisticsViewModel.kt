@@ -6,6 +6,8 @@ import com.quranhabit.data.dao.StatisticsDao
 import com.quranhabit.ui.statistics.DailyData
 import com.quranhabit.utils.DateUtils
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -25,8 +27,11 @@ class StatisticsViewModel(private val statisticsDao: StatisticsDao) : ViewModel(
     private val _totalTimeRead = MutableLiveData<Int>()
     val totalTimeRead: LiveData<Int> = _totalTimeRead
 
-    private val _monthlyData = MutableLiveData<List<DailyData>>()
-    val monthlyData: LiveData<List<DailyData>> = _monthlyData
+    private val _monthlyData = MutableStateFlow<List<DailyData>>(emptyList())
+    val monthlyData: StateFlow<List<DailyData>> = _monthlyData
+
+    private val _weeklyTimeData = MutableStateFlow<List<DailyData>>(emptyList()) // Add this
+    val weeklyTimeData: StateFlow<List<DailyData>> = _weeklyTimeData // Add this
 
     init {
         loadProgress()
@@ -45,6 +50,10 @@ class StatisticsViewModel(private val statisticsDao: StatisticsDao) : ViewModel(
                 statisticsDao.getTimeRangeStatsData(30)
             }
 
+            val dataForWeekTime = withContext(Dispatchers.IO) { // Fetch data for the time chart
+                statisticsDao.getTimeRangeStatsData(7)
+            }
+
             val totalPagesRead = withContext(Dispatchers.IO) {
                 statisticsDao.getTotalPagesRead()
             }
@@ -54,7 +63,6 @@ class StatisticsViewModel(private val statisticsDao: StatisticsDao) : ViewModel(
             }
 
             _pagesReadToday.value = dataForToday?.pagesRead ?: 0
-            // Calculate the sum of pages read in the last 30 days
             _pagesReadMonth.value = dataForMonth.sumOf { it.pagesRead }
             _timeReadToday.value = dataForToday?.secondsSpendReading ?: 0
             _totalPagesRead.value = totalPagesRead
@@ -62,6 +70,7 @@ class StatisticsViewModel(private val statisticsDao: StatisticsDao) : ViewModel(
 
             // Graph data
             _monthlyData.value = dataForMonth
+            _weeklyTimeData.value = dataForWeekTime // Emit data for the time chart
         }
     }
 
@@ -72,8 +81,9 @@ class StatisticsViewModel(private val statisticsDao: StatisticsDao) : ViewModel(
             _totalPagesRead.value = 0
             _timeReadToday.value = 0
             _totalTimeRead.value = 0
-            _pagesReadMonth.value = 0 // Reset monthly count as well
-            _monthlyData.value = emptyList() // Reset monthly data for the graph
+            _pagesReadMonth.value = 0
+            _monthlyData.value = emptyList()
+            _weeklyTimeData.value = emptyList() // Reset weekly time data
         }
     }
 }

@@ -2,7 +2,6 @@ package com.quranhabit.ui.statistics
 
 import StatisticsViewModel
 import android.app.AlertDialog
-import android.icu.text.SimpleDateFormat
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,16 +10,20 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.quranhabit.MainActivity
 import com.quranhabit.data.QuranDatabase
 import com.quranhabit.data.dao.StatisticsDao
 import com.quranhabit.databinding.FragmentStatisticsBinding
-import java.util.Locale
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 class StatisticsFragment : Fragment() {
 
     companion object {
-        const val PAGES_PER_DAY_GOAL = 20 // Make sure this is public (no 'private')
+        const val PAGES_PER_DAY_GOAL = 20
     }
 
     private var _binding: FragmentStatisticsBinding? = null
@@ -67,16 +70,24 @@ class StatisticsFragment : Fragment() {
         }
 
         // Graphs
-        viewModel.monthlyData.observe(viewLifecycleOwner) { weeklyData ->
-            val pagesRead = weeklyData.map { it.pagesRead }
-            val secondsReading = weeklyData.map { it.secondsReading / 60 }
-            val labels = weeklyData.map {
-                SimpleDateFormat("EEE", Locale.getDefault())
-                    .format(SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it.date))
+        lifecycleScope.launch {
+            viewModel.monthlyData.collectLatest { dailyDataList ->
+                val pagesReadList = dailyDataList.map { it.pagesRead }
+                val dateListPages = dailyDataList.map { LocalDate.parse(it.date, DateTimeFormatter.ISO_DATE) }
+                binding.monthlyPagesChart.goal = 20
+                binding.monthlyPagesChart.displayDays = 30
+                binding.monthlyPagesChart.setData(pagesReadList, dateListPages)
             }
+        }
 
-            binding.monthlyPagesChart.setData(pagesRead, labels)
-            binding.weeklyTimeChart.setData(secondsReading, labels)
+        lifecycleScope.launch {
+            viewModel.weeklyTimeData.collectLatest { weeklyTimeDataList ->
+                val timeSpentList = weeklyTimeDataList.map { it.secondsReading / 60 } // Convert seconds to minutes
+                val dateListTime = weeklyTimeDataList.map { LocalDate.parse(it.date, DateTimeFormatter.ISO_DATE) }
+                binding.weeklyTimeChart.goal = 30
+                binding.weeklyTimeChart.displayDays = 7
+                binding.weeklyTimeChart.setData(timeSpentList, dateListTime)
+            }
         }
 
         // Buttonz
