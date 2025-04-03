@@ -2,6 +2,7 @@ package com.quranhabit.ui.reader
 
 import android.content.Context
 import android.graphics.Typeface
+import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Trace.isEnabled
@@ -510,7 +511,10 @@ class QuranReaderFragment : Fragment() {
                             false
                         )
                         ayahBinding.ayahNumberTextView.text = ayah.ayahNumber.toString()
-                        ayahBinding.ayahTextView.text = remainingText
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                            ayahBinding.ayahTextView.fontFeatureSettings = "'liga' on, 'clig' on"  // Forces ligature rendering
+                        }
+                        ayahBinding.ayahTextView.text = fixMissingSmallStops(remainingText)
                         // Set both tag formats for compatibility
                         ayahBinding.root.tag = "ayah_${ayah.surahNumber}_${ayah.ayahNumber}"
                         ayahBinding.root.setTag(R.id.ayah_tag, "ayah_${ayah.ayahNumber}")
@@ -523,12 +527,24 @@ class QuranReaderFragment : Fragment() {
                     false
                 )
                 binding.ayahNumberTextView.text = ayah.ayahNumber.toString()
-                binding.ayahTextView.text = ayah.text
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    binding.ayahTextView.fontFeatureSettings = "'liga' on, 'clig' on"  // Forces ligature rendering
+                }
+                binding.ayahTextView.text = fixMissingSmallStops(ayah.text)
                 // Set both tag formats for compatibility
                 binding.root.tag = "ayah_${ayah.surahNumber}_${ayah.ayahNumber}"
                 binding.root.setTag(R.id.ayah_tag, "ayah_${ayah.ayahNumber}")
                 container.addView(binding.root)
             }
+        }
+
+        private fun fixMissingSmallStops(quranText: String): String {
+            val fixedText = quranText
+                .replace("ۖ", "\u06D6")  // Force Unicode SALLAA
+                .replace("ۗ", "\u06D7")  // Force Unicode QALA
+                .replace("ۚ", "\u06DA")  // Force Unicode JEEM
+
+            return fixedText
         }
     }
 
