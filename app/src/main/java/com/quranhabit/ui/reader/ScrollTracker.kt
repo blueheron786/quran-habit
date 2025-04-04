@@ -1,61 +1,67 @@
 package com.quranhabit.ui.reader
 
+import android.view.View
 import androidx.core.widget.NestedScrollView
 
 class ScrollTracker {
     private var scrollView: NestedScrollView? = null
+    private var isTracking = false
+
     var onScrollStateChanged: ((Boolean) -> Unit)? = null
     var onScrollPositionChanged: ((Boolean) -> Unit)? = null
-    private var isScrolling = false
-    private var isBottomReached = false
-    private var lastScrollY: Int = 0
+    var onReachedBottom: (() -> Unit)? = null
+    var onScrolledUpFromBottom: (() -> Unit)? = null
 
-    fun attach(view: NestedScrollView) {
-        scrollView = view
-        view.setOnScrollChangeListener(NestedScrollView.OnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
-            // Track scrolling state
-            val newScrollingState = scrollY != oldScrollY
-            if (newScrollingState != isScrolling) {
-                isScrolling = newScrollingState
-                onScrollStateChanged?.invoke(isScrolling)
+    private val scrollListener = NestedScrollView.OnScrollChangeListener { v: View?, scrollX: Int, scrollY: Int, oldScrollX: Int, oldScrollY: Int ->
+        (v as? NestedScrollView)?.let { view ->
+            val atBottom = isAtBottom(view)
+
+            // Notify position changes
+            onScrollPositionChanged?.invoke(atBottom)
+
+            // Notify scroll state (whether scrolling occurred)
+            val isScrolling = scrollY != oldScrollY
+            onScrollStateChanged?.invoke(isScrolling)
+
+            // Edge detection callbacks
+            if (atBottom) {
+                onReachedBottom?.invoke()
+            } else if (isScrolling && wasAtBottom && !atBottom) {
+                onScrolledUpFromBottom?.invoke()
             }
 
-            // Track bottom position
-            val contentHeight = scrollView?.getChildAt(0)?.height ?: 0
-            val visibleHeight = scrollView?.height ?: 0
-            val newBottomState = (scrollY + visibleHeight) >= contentHeight - PIXELS_BUFFER
-
-            if (newBottomState != isBottomReached) {
-                isBottomReached = newBottomState
-                onScrollPositionChanged?.invoke(isBottomReached)
-            }
-        })
-    }
-
-    fun getScrollY(): Int {
-        return scrollView?.scrollY ?: 0
-    }
-
-    fun saveScrollPosition() {
-        lastScrollY = scrollView?.scrollY ?: 0
-    }
-
-    fun restoreScrollPosition() {
-        scrollView?.post {
-            scrollView?.scrollTo(0, lastScrollY)
+            wasAtBottom = atBottom
         }
     }
 
-    fun detach() {
-        saveScrollPosition()
+    private var wasAtBottom = false
 
+    fun attach(scrollView: NestedScrollView) {
+        if (this.scrollView == scrollView && isTracking) return
+
+        detach()
+        this.scrollView = scrollView
+        scrollView.setOnScrollChangeListener(scrollListener)
+        isTracking = true
+    }
+
+    fun detach() {
         scrollView?.setOnScrollChangeListener(null as NestedScrollView.OnScrollChangeListener?)
         scrollView = null
-        onScrollStateChanged = null
-        onScrollPositionChanged = null  // Prevent stale callbacks
+        isTracking = false
+        wasAtBottom = false
     }
-    
+
+    fun getScrollY(): Int = scrollView?.scrollY ?: 0
+
+    private fun isAtBottom(scrollView: NestedScrollView): Boolean {
+        return scrollView.getChildAt(0)?.let { child ->
+            val scrollRange = child.height - scrollView.height
+            scrollView.scrollY >= scrollRange - SCROLL_THRESHOLD
+        } ?: false
+    }
+
     companion object {
-        private const val PIXELS_BUFFER = 16
+        private const val SCROLL_THRESHOLD = 10 // pixels
     }
 }

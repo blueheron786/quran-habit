@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">Qur\'an Habit</string>
 
+    <!-- basmala header -->
+    <string name="basmala">بِسمِ ٱللَّهِ ٱلرَّحمَـٰنِ ٱلرَّحِيمِ</string>
+
     <!-- stats values -->
     <string name="pages_today">Today: %d pages</string>
     <string name="pages_month">30 days: %d pages</string>
