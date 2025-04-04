@@ -87,6 +87,7 @@ class SurahListFragment : Fragment() {
             RecyclerView.ViewHolder(binding.root) {
 
             fun bind(surah: Surah) {
+                binding.surahNumberTextView.text = surah.number.toString() + "."
                 binding.englishNameTextView.text = surah.englishName
                 binding.arabicNameTextView.text = surah.arabicName
 

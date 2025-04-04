@@ -6,9 +6,20 @@
     android:orientation="horizontal"
     android:gravity="center_vertical"
     android:layoutDirection="ltr"
-    android:background="@color/background_darkblue"> <!-- Added vertical padding -->
+    android:background="@color/background_darkblue">
 
-    <!-- English (Left-aligned) -->
+    <!-- Surah Number (Leftmost) -->
+    <TextView
+        android:id="@+id/surahNumberTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:textColor="@color/text_primary"
+        android:paddingStart="16dp"
+        android:paddingEnd="8dp"
+        tools:text="18"/>
+
+    <!-- English Name (Middle) -->
     <TextView
         android:id="@+id/englishNameTextView"
         android:layout_width="0dp"
@@ -17,11 +28,10 @@
         android:textSize="20sp"
         android:textColor="@color/text_primary"
         android:gravity="start"
-        android:paddingStart="16dp"
         android:paddingEnd="24dp"
-        tools:text="Al-Fatiha"/>
+        tools:text="Al-Kahf"/>
 
-    <!-- Arabic (Right-aligned) -->
+    <!-- Arabic Name (Right-aligned) -->
     <TextView
         android:id="@+id/arabicNameTextView"
         android:layout_width="wrap_content"
@@ -33,5 +43,5 @@
         android:gravity="end"
         android:paddingStart="8dp"
         android:paddingEnd="16dp"
-        tools:text="الفاتحة"/>
+        tools:text="الكهف"/>
 </LinearLayout>
