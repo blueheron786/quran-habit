@@ -1,13 +1,11 @@
 package com.quranhabit.ui.reader.adapter
 
-import android.util.SparseArray
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.quranhabit.databinding.ItemPageBinding
 import com.quranhabit.ui.reader.QuranPageRenderer
 import com.quranhabit.ui.reader.QuranReaderFragment
-import com.quranhabit.ui.reader.ScrollTracker
 import com.quranhabit.ui.reader.model.PageAyahRange
 
 class QuranPageAdapter(
@@ -16,11 +14,7 @@ class QuranPageAdapter(
     private val pageRenderer: QuranPageRenderer
 ) : RecyclerView.Adapter<QuranPageAdapter.PageViewHolder>() {
 
-    private val scrollPositions = SparseArray<Int>()
-
-    inner class PageViewHolder(val binding: ItemPageBinding) : RecyclerView.ViewHolder(binding.root) {
-        val scrollTracker = ScrollTracker()
-    }
+    inner class PageViewHolder(val binding: ItemPageBinding) : RecyclerView.ViewHolder(binding.root)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PageViewHolder {
         val binding = ItemPageBinding.inflate(
@@ -33,31 +27,7 @@ class QuranPageAdapter(
 
     override fun onBindViewHolder(holder: PageViewHolder, position: Int) {
         pageRenderer.renderPage(holder.binding.pageContent, allPages[position])
-
-        val scrollView = holder.binding.pageScrollView
-        scrollView.scrollTo(0, scrollPositions.get(position, 0))
-
-        holder.scrollTracker.attach(scrollView)
-        holder.scrollTracker.onScrollStateChanged = { isScrolled ->
-            if (position == fragment.getCurrentPagePosition()) {
-                fragment.getReadingTracker().checkPageReadConditions()
-            }
-        }
-        holder.scrollTracker.onScrollPositionChanged = { atBottom ->
-            if (position == fragment.getCurrentPagePosition()) {
-                fragment.getReadingTracker().handleBottomPositionChange(atBottom)
-            }
-        }
     }
 
-    override fun onViewRecycled(holder: PageViewHolder) {
-        val position = holder.bindingAdapterPosition
-        if (position != RecyclerView.NO_POSITION) {
-            scrollPositions.put(position, holder.scrollTracker.getScrollY())
-            holder.scrollTracker.detach()
-        }
-        super.onViewRecycled(holder)
-    }
-
-    override fun getItemCount() = allPages.size
+    override fun getItemCount(): Int = allPages.size
 }

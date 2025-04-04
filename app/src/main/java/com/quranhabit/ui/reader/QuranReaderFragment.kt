@@ -22,6 +22,7 @@ import com.quranhabit.data.SurahRepository
 import com.quranhabit.databinding.FragmentQuranReaderBinding
 import com.quranhabit.data.repository.LastReadRepository
 import com.quranhabit.ui.reader.adapter.QuranPageAdapter
+import com.quranhabit.ui.reader.components.NavigationHandler
 import com.quranhabit.ui.reader.model.PageAyahRange
 import com.quranhabit.ui.surah.Surah
 
@@ -65,77 +66,95 @@ class QuranReaderFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         (requireActivity() as AppCompatActivity).supportActionBar?.hide()
 
-        // Initialize data
+        // Initialize data first
         allPages = loadPagesData()
         quranLines = loadQuranText()
 
         // Get initial surah number from arguments
         currentSurahNumber = arguments?.getInt("surahNumber") ?: 1
         val ayahNumber = arguments?.getInt("ayahNumber") ?: 1
+        Log.d("Navigation", "Initial surah: $currentSurahNumber, ayah: $ayahNumber")
 
-        // Initialize components AFTER we have the surah number
+        // Initialize components
         readingTracker = PageReadingTracker(statisticsDao, lifecycleScope)
-        pageRenderer = QuranPageRenderer(requireContext(), quranLines)
-        navigationHandler = NavigationHandler(
-            binding.quranPager,
-            allPages,
-            lastReadRepo,
-            ::getFirstLineNumberForSurah
-        )
         positionSaver = PositionSaver(prefs, lastReadRepo, statisticsDao)
         headerUpdater = HeaderUpdater(binding)
+        pageRenderer = QuranPageRenderer(
+            requireContext(),
+            quranLines,
+            ::getFirstLineNumberForSurah
+        )
 
-        // Setup view pager and handle navigation in one go
-        setupViewPagerAndNavigate(currentSurahNumber, ayahNumber)
+        // Disable ViewPager2's initial page set
+        binding.quranPager.isSaveEnabled = false
+
+        // Setup view pager with initial page
+        Log.d("Navigation", "Going in: $currentSurahNumber, ayah: $ayahNumber")
+        setupViewPager(currentSurahNumber, ayahNumber)
     }
 
-    private fun setupViewPagerAndNavigate(surah: Int, ayah: Int) {
+    private fun setupViewPager(initialSurah: Int, initialAyah: Int) {
         binding.quranPager.adapter = QuranPageAdapter(this, allPages, pageRenderer)
         binding.quranPager.layoutDirection = View.LAYOUT_DIRECTION_RTL
         binding.quranPager.offscreenPageLimit = 2
 
-        // Set the page first
-        val targetPage = navigationHandler.findFirstPageForSurah(surah)
-        binding.quranPager.setCurrentItem(targetPage, false)
+        // Set initial page before registering callbacks
+        val initialPage = findFirstPageForSurah(initialSurah)
+        binding.quranPager.setCurrentItem(initialPage, false)
 
         binding.quranPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(newPage: Int) {
-                handlePageChange(newPage)
+            override fun onPageSelected(position: Int) {
+                val ranges = allPages.getOrNull(position) ?: return
+                if (ranges.isNotEmpty()) {
+                    currentSurahNumber = ranges.first().surah
+                    headerUpdater.update(currentSurahNumber, position + 1)
+                }
             }
         })
 
-        // Then handle ayah navigation after layout is complete
-        binding.quranPager.post {
-            if (arguments?.containsKey("ayahNumber") == true) {
-                navigationHandler.scrollToAyah(targetPage, surah, ayah)
+        // Handle ayah scrolling after layout
+        if (initialAyah > 1) {
+            binding.quranPager.post {
+                scrollToAyah(initialPage, initialSurah, initialAyah)
             }
-            headerUpdater.update(surah, targetPage)
         }
     }
 
-    private fun handleInitialNavigation(surah: Int, ayah: Int) {
-        val targetPage = navigationHandler.findPageForAyah(surah, ayah)
-        if (binding.quranPager.currentItem != targetPage) {
-            binding.quranPager.setCurrentItem(targetPage, false)
+    private fun findFirstPageForSurah(surahNumber: Int): Int {
+        // Find the page where the surah actually begins
+        return allPages.indexOfFirst { pageRanges ->
+            pageRanges.any { range ->
+                range.surah == surahNumber &&
+                        range.start == getFirstLineNumberForSurah(surahNumber)
+            }
+        }.takeIf { it != -1 } ?: run {
+            // Fallback: find any page containing the surah
+            allPages.indexOfFirst { pageRanges ->
+                pageRanges.any { it.surah == surahNumber }
+            }.coerceAtLeast(0)
         }
     }
 
-    private fun scrollToAyah(surah: Int, ayah: Int) {
-        val recyclerView = binding.quranPager.getChildAt(0) as? RecyclerView ?: return
-        val viewHolder = recyclerView.findViewHolderForAdapterPosition(binding.quranPager.currentItem) ?: return
-        val scrollView = viewHolder.itemView.findViewById<NestedScrollView>(R.id.page_scroll_view)
+    private fun scrollToAyah(page: Int, surah: Int, ayah: Int) {
+        try {
+            val recyclerView = binding.quranPager.getChildAt(0) as? RecyclerView ?: return
+            val viewHolder = recyclerView.findViewHolderForAdapterPosition(page) ?: return
+            val scrollView = viewHolder.itemView.findViewById<NestedScrollView>(R.id.page_scroll_view) ?: return
 
-        scrollView.post {
-            try {
-                val ayahView = scrollView.findViewWithTag<View?>("ayah_${surah}_$ayah")
-                    ?: scrollView.findViewWithTag<View?>("ayah_$ayah")
+            scrollView.post {
+                try {
+                    val ayahView = scrollView.findViewWithTag<View>("ayah_${surah}_$ayah")
+                        ?: scrollView.findViewWithTag<View>("ayah_$ayah")
 
-                ayahView?.let {
-                    scrollView.smoothScrollTo(0, it.top)
+                    ayahView?.let {
+                        scrollView.smoothScrollTo(0, it.top)
+                    }
+                } catch (e: Exception) {
+                    Log.e("Navigation", "Scroll failed", e)
                 }
-            } catch (e: Exception) {
-                Log.e("QuranReader", "Ayah scroll failed", e)
             }
+        } catch (e: Exception) {
+            Log.e("Navigation", "Scroll setup failed", e)
         }
     }
 
@@ -152,6 +171,7 @@ class QuranReaderFragment : Fragment() {
     private fun handlePageChange(newPage: Int) {
         readingTracker.handlePageChange(newPage)
         currentSurahNumber = getSurahForPage(newPage).number
+        Log.d("Navigation", "HandpePageChange(): surah: $currentSurahNumber")
         headerUpdater.update(currentSurahNumber, newPage)
     }
 
@@ -161,7 +181,10 @@ class QuranReaderFragment : Fragment() {
     }
 
     private fun getFirstLineNumberForSurah(surahNumber: Int): Int {
-        return allPages.flatten().firstOrNull { it.surah == surahNumber }?.start ?: 0
+        // Find the absolute starting line number for this surah
+        return allPages.flatten()
+            .firstOrNull { it.surah == surahNumber }
+            ?.start ?: 0
     }
 
     override fun onResume() {

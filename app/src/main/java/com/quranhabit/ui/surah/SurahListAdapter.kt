@@ -54,6 +54,7 @@ class SurahListFragment : Fragment() {
                 try {
                     val bundle = Bundle().apply {
                         putInt("surahNumber", surah.number)
+                        putInt("ayahNumber", 1)
                     }
                     findNavController().navigate(
                         R.id.action_surahListFragment_to_quranReaderFragment,
