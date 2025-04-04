@@ -179,8 +179,11 @@ class BarChartView @JvmOverloads constructor(
             canvas.drawPath(barPath, barPaint)
 
             // Draw x-axis labels conditionally
-            if (numBars <= 10 || (useNumericLabels && index % labelInterval == 0) || (!useNumericLabels && (numBars <= 10 || index % 5 == 0)) || index == numBars - 1) {
-                val labelText = if (useNumericLabels) {
+            val isLastBar = index == numBars - 1
+            if (numBars <= 10 || (useNumericLabels && index % labelInterval == 0) || (!useNumericLabels && (numBars <= 10 || index % 5 == 0)) || isLastBar) {
+                val labelText = if (isLastBar && displayedLabels.isNotEmpty()) {
+                    "Today"
+                } else if (useNumericLabels) {
                     (index + 1).toString()
                 } else {
                     displayedLabels.getOrNull(index)?.format(labelFormatter)?.take(3) ?: ""
