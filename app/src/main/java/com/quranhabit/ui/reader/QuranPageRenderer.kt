@@ -17,21 +17,27 @@ class QuranPageRenderer(
     private val basmalaText = context.getString(R.string.basmala)
 
     fun renderPage(pageContent: ViewGroup, pageRanges: List<PageAyahRange>) {
-        pageContent.removeAllViews()
+        pageContent.removeAllViews() // Clear previous content
 
         pageRanges.forEach { range ->
             val firstLineForSurah = getFirstLineNumber(range.surah)
             (range.start..range.end).forEach { lineNumber ->
-                val lineText = quranLines[lineNumber - 1]
+                val lineText = quranLines[lineNumber - 1] // Lines are 1-indexed
                 val ayahNumber = lineNumber - firstLineForSurah + 1
                 val ayah = Ayah(range.surah, ayahNumber, lineText)
 
+                // Handle Basmalah (for non-Fatiha/Tawba)
                 if (isBasmala(ayah)) {
-                    addBasmalaView(pageContent)
+                    addBasmalaView(pageContent, ayah.surahNumber)
+                    // Add remaining text if Basmalah isn't the entire line
                     if (lineText.length > basmalaText.length) {
-                        addAyahView(pageContent, ayah.copy(text = lineText.substring(basmalaText.length).trim()))
+                        val remainingText = lineText.substring(basmalaText.length).trim()
+                        if (remainingText.isNotEmpty()) {
+                            addAyahView(pageContent, ayah.copy(text = remainingText))
+                        }
                     }
                 } else {
+                    // Normal ayah
                     addAyahView(pageContent, ayah)
                 }
             }
@@ -45,12 +51,13 @@ class QuranPageRenderer(
                 ayah.text.startsWith(basmalaText)
     }
 
-    private fun addBasmalaView(container: ViewGroup) {
+    private fun addBasmalaView(container: ViewGroup, surahNumber: Int) {
         val binding = ItemBasmalaBinding.inflate(
             LayoutInflater.from(context),
             container,
             false
         )
+        binding.root.tag = "basmalah_$surahNumber" // Tag with surah number
         container.addView(binding.root)
     }
 

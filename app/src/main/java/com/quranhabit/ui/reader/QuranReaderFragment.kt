@@ -33,7 +33,6 @@ class QuranReaderFragment : Fragment() {
 
     private lateinit var readingTracker: PageReadingTracker
     private lateinit var pageRenderer: QuranPageRenderer
-    private lateinit var navigationHandler: NavigationHandler
     private lateinit var positionSaver: PositionSaver
     private lateinit var headerUpdater: HeaderUpdater
 
@@ -166,16 +165,18 @@ class QuranReaderFragment : Fragment() {
                 val viewHolder = recyclerView.findViewHolderForAdapterPosition(page) ?: return@post
                 val scrollView = viewHolder.itemView.findViewById<NestedScrollView>(R.id.page_scroll_view) ?: return@post
 
-                // Find the FIRST ayah of the surah
-                val firstAyahView = scrollView.findViewWithTag<View>("ayah_${surah}_1")
+                // Find the Basmalah or first ayah
+                val basmalahView = scrollView.findViewWithTag<View>("basmalah_$surah") // Tag your Basmalah view!
+                    ?: scrollView.findViewWithTag<View>("ayah_${surah}_1")
                     ?: scrollView.findViewWithTag<View>("ayah_1")
 
-                // Scroll to the top of the surah
-                firstAyahView?.let {
-                    scrollView.smoothScrollTo(0, it.top)
+                // Scroll 16dp ABOVE the Basmalah (adjust this value as needed)
+                val scrollPadding = (16 * resources.displayMetrics.density).toInt()
+                basmalahView?.let {
+                    scrollView.smoothScrollTo(0, it.top - scrollPadding)
                 }
             } catch (e: Exception) {
-                Log.e("Scroll", "Failed to scroll to surah start", e)
+                Log.e("Scroll", "Failed to scroll to Basmalah", e)
             }
         }
     }
