@@ -1,5 +1,6 @@
 package com.quranhabit.ui.reader
 
+import ReadingTimeTracker
 import android.content.Context
 import android.graphics.Typeface
 import android.os.Build
@@ -79,7 +80,7 @@ class QuranReaderFragment : Fragment() {
     private var lastPageMarkedAsRead = -1
 
     // Total time read
-    private var readingStartTime: Long = 0
+    private val readingTimeTracker = ReadingTimeTracker()
 
     companion object {
         private const val PAGE_READ_DELAY_MS = 3000L
@@ -106,6 +107,7 @@ class QuranReaderFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         (requireActivity() as AppCompatActivity).supportActionBar?.hide()
         super.onViewCreated(view, savedInstanceState)
+        readingTimeTracker.start()
 
         // Load the last marked page so we don't double-mark as read
         val prefs = requireContext().getSharedPreferences("QuranPrefs", Context.MODE_PRIVATE)
@@ -130,6 +132,30 @@ class QuranReaderFragment : Fragment() {
             binding.quranPager.postDelayed({
                 scrollToAyah(currentSurahNumber, ayahNumber)
             }, 300)
+        }
+    }
+
+    private fun logReadingTime(seconds: Int) {
+        if (seconds <= 0) return
+
+        val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        Log.d("ReadingTime", "Logging $seconds seconds for $currentDate")
+
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                val existingRecord = statisticsDao.getByDate(currentDate)
+                if (existingRecord != null) {
+                    statisticsDao.upsert(existingRecord.copy(
+                        secondsSpendReading = existingRecord.secondsSpendReading + seconds
+                    ))
+                } else {
+                    statisticsDao.upsert(PagesReadOnDay(
+                        date = currentDate,
+                        pagesRead = 0,
+                        secondsSpendReading = seconds
+                    ))
+                }
+            }
         }
     }
 
@@ -220,6 +246,16 @@ class QuranReaderFragment : Fragment() {
             private var scrollState = ViewPager2.SCROLL_STATE_IDLE
 
             override fun onPageSelected(newPage: Int) {
+                // 1. Pause and log time from previous page
+                val secondsRead = readingTimeTracker.pause()
+                if (secondsRead > 0) {
+                    logReadingTime(secondsRead)
+                }
+
+                // 2. Reset and start fresh for new page
+                readingTimeTracker.reset()
+                readingTimeTracker.start()
+
                 // CANCEL ALL TIMERS on page change
                 pageTimer?.cancel()
                 pageTimer = null
@@ -246,14 +282,6 @@ class QuranReaderFragment : Fragment() {
                 if (!pageReadStates.getOrDefault(newPage, false)) {
                     startPageReadTimer(newPage)
                 }
-
-                //// Total time read
-                val currentTime = System.currentTimeMillis()
-                if (readingStartTime > 0) {
-                    val secondsSpendReading = ((currentTime - readingStartTime) / 1000).toInt() // Convert ms to seconds
-                    logReadingTime(secondsSpendReading)
-                }
-                readingStartTime = currentTime // Reset for the new page
 
                 // page/timer stuff
                 currentPagePosition = newPage
@@ -384,6 +412,7 @@ class QuranReaderFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        readingTimeTracker.start()
         (requireActivity() as MainActivity).setBottomNavVisibility(false)
     }
 
@@ -395,7 +424,6 @@ class QuranReaderFragment : Fragment() {
     override fun onDestroyView() {
         pageTimer?.cancel()
         bottomTimer?.cancel()
-        readingStartTime = 0
         isTrackingScroll = false
         super.onDestroyView()
         _binding = null
@@ -572,62 +600,88 @@ class QuranReaderFragment : Fragment() {
     }
 
     private fun markPageAsRead(pageNumber: Int) {
+        // 1. First pause and capture the reading time
+        val secondsRead = readingTimeTracker.pause()
+
+        // Only proceed if we actually spent time reading
+        if (secondsRead <= 0) {
+            Log.d("PageMark", "Not marking page $pageNumber - no reading time recorded")
+            readingTimeTracker.reset()
+            readingTimeTracker.start()
+            return
+        }
+
+        // 2. Get all the page data we need
         val surahNumber = getSurahForPage(pageNumber).number
         val ayahRanges = allPages[pageNumber]
-
-        // Find the last ayah on this page
         val lastAyahRange = ayahRanges.last()
         val lastAyahNumber = lastAyahRange.end - getFirstLineNumberForSurah(lastAyahRange.surah) + 1
 
-        // Get scroll position
+        // 3. Get scroll position from ViewHolder
         val recyclerView = binding.quranPager.getChildAt(0) as? RecyclerView
         val viewHolder = recyclerView?.findViewHolderForAdapterPosition(pageNumber) as? QuranPageAdapter.PageViewHolder
         val scrollY = viewHolder?.scrollTracker?.getScrollY() ?: 0
 
-        val timeSpent = (System.currentTimeMillis() - readingStartTime) / 1000 // Convert ms to seconds
-
-        // Save reading progress
+        // 4. Save reading progress immediately to SharedPreferences
         saveLastReadAyah(surahNumber, lastAyahNumber)
+        lastPageMarkedAsRead = pageNumber
 
-        // Record in database
+        // 5. Record in database
         lifecycleScope.launch {
-            lastReadRepo.savePosition(surahNumber, lastAyahNumber, pageNumber, scrollY)
+            try {
+                // Save position in Room database
+                lastReadRepo.savePosition(surahNumber, lastAyahNumber, pageNumber, scrollY)
 
-            val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+                val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
-            // Get existing record for today
-            val existingRecord = statisticsDao.getByDate(currentDate)
+                // Get existing record for today
+                val existingRecord = withContext(Dispatchers.IO) {
+                    statisticsDao.getByDate(currentDate)
+                }
 
-            if (existingRecord != null) {
-                // Update existing record
-                statisticsDao.upsert(
-                    existingRecord.copy(
-                        pagesRead = existingRecord.pagesRead + 1,
-                        secondsSpendReading = existingRecord.secondsSpendReading + timeSpent.toInt()
-                    )
-                )
-            } else {
-                // Create new record
-                statisticsDao.upsert(
-                    PagesReadOnDay(
-                        date = currentDate,
-                        pagesRead = 1,
-                        secondsSpendReading = 0
-                    )
-                )
+                // Update statistics
+                withContext(Dispatchers.IO) {
+                    if (existingRecord != null) {
+                        statisticsDao.upsert(
+                            existingRecord.copy(
+                                pagesRead = existingRecord.pagesRead + 1,
+                                secondsSpendReading = existingRecord.secondsSpendReading + secondsRead
+                            )
+                        )
+                    } else {
+                        statisticsDao.upsert(
+                            PagesReadOnDay(
+                                date = currentDate,
+                                pagesRead = 1,
+                                secondsSpendReading = secondsRead
+                            )
+                        )
+                    }
+                }
+
+                // Show feedback and reset timer on main thread
+                withContext(Dispatchers.Main) {
+                    showPageReadFeedback()
+                    readingTimeTracker.reset()
+                    readingTimeTracker.start() // Start fresh for next page
+                }
+
+                Log.d("QuranReader", "Marked page $pageNumber as read with $secondsRead seconds spent")
+
+            } catch (e: Exception) {
+                Log.e("QuranReader", "Error marking page as read", e)
+                // Ensure timer gets reset even if there's an error
+                withContext(Dispatchers.Main) {
+                    readingTimeTracker.reset()
+                    readingTimeTracker.start()
+                }
             }
-
-            withContext(Dispatchers.Main) {
-                showPageReadFeedback()
-            }
-
-            Log.d("QuranReader", "Marked page $pageNumber as read with $timeSpent seconds spent")
         }
-        lastPageMarkedAsRead = pageNumber // Update last marked page HERE
     }
 
     override fun onPause() {
         super.onPause()
+        readingTimeTracker.pause()
         saveCurrentPosition()
         // Save the last marked page
         requireContext().getSharedPreferences("QuranPrefs", Context.MODE_PRIVATE).edit() {
@@ -666,13 +720,24 @@ class QuranReaderFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Proper way to handle back button presses
         val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                // 1. Pause the timer (captures current reading session)
+                readingTimeTracker.pause()
+
+                // 2. Log the accumulated time
+                val secondsRead = readingTimeTracker.getTotalSeconds()
+                if (secondsRead > 0) {
+                    logReadingTime(secondsRead)
+                }
+
+                // 3. Save position and navigate back
                 saveCurrentPosition()
                 isEnabled = false
                 requireActivity().onBackPressed()
+
+                // 4. Reset after logging (don't reset before logging!)
+                readingTimeTracker.reset()
             }
         }
         requireActivity().onBackPressedDispatcher.addCallback(this, callback)
