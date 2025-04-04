@@ -41,6 +41,7 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.core.content.edit
 
 // Our awesome, flaky way of detecting and inserting the basmalla header
 private const val BASMALLA_TEXT = "بِسمِ ٱللَّهِ ٱلرَّحمَـٰنِ ٱلرَّحِيمِ"
@@ -74,6 +75,8 @@ class QuranReaderFragment : Fragment() {
     private var pageMarked = false
     private var isAtBottom = false
     private var bottomTimer: CountDownTimer? = null
+    // Don't mark as read again if we read to  the bottom of a page and reopen and continue
+    private var lastPageMarkedAsRead = -1
 
     // Total time read
     private var readingStartTime: Long = 0
@@ -103,6 +106,10 @@ class QuranReaderFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         (requireActivity() as AppCompatActivity).supportActionBar?.hide()
         super.onViewCreated(view, savedInstanceState)
+
+        // Load the last marked page so we don't double-mark as read
+        val prefs = requireContext().getSharedPreferences("QuranPrefs", Context.MODE_PRIVATE)
+        lastPageMarkedAsRead = prefs.getInt("lastPageMarked", -1)
 
         // Initialize data
         allPages = cachedPages.flatten()
@@ -282,18 +289,20 @@ class QuranReaderFragment : Fragment() {
     }
 
     private fun checkPageReadConditions() {
-        Log.d("PageConditions", "Checking conditions - scroll:$pageScrollState, marked:$pageMarked, read:${pageReadStates.getOrDefault(currentPagePosition, false)}, bottom:$isAtBottom, timer:${pageTimer == null}")
+        Log.d("PageConditions", "Checking conditions - scroll:$pageScrollState, marked:$pageMarked, read:${pageReadStates.getOrDefault(currentPagePosition, false)}, bottom:$isAtBottom, timer:${pageTimer == null}, lastMarked:$lastPageMarkedAsRead, current:$currentPagePosition")
 
-        // Only need to check if we're at bottom now, since we track scrolling state separately
+        // Only mark as read if we haven't already marked this page
         if (!pageMarked &&
             !pageReadStates.getOrDefault(currentPagePosition, false) &&
             isAtBottom &&
-            pageTimer == null) {
+            pageTimer == null &&
+            currentPagePosition != lastPageMarkedAsRead) {
 
             Log.d("PageMark", "All conditions met for page $currentPagePosition")
             markPageAsRead(currentPagePosition)
             pageMarked = true
             pageReadStates[currentPagePosition] = true
+            lastPageMarkedAsRead = currentPagePosition // Update last marked page
         }
     }
 
@@ -603,11 +612,16 @@ class QuranReaderFragment : Fragment() {
 
             Log.d("QuranReader", "Marked page $pageNumber as read with $timeSpent seconds spent")
         }
+        lastPageMarkedAsRead = pageNumber // Update last marked page HERE
     }
 
     override fun onPause() {
         super.onPause()
         saveCurrentPosition()
+        // Save the last marked page
+        requireContext().getSharedPreferences("QuranPrefs", Context.MODE_PRIVATE).edit() {
+            putInt("lastPageMarked", lastPageMarkedAsRead)
+        }
     }
 
     private fun saveCurrentPosition() {
