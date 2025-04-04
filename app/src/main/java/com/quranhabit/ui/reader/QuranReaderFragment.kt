@@ -91,6 +91,14 @@ class QuranReaderFragment : Fragment() {
         // Setup view pager with initial page
         Log.d("Navigation", "Going in: $currentSurahNumber, ayah: $ayahNumber")
         setupViewPager(currentSurahNumber, ayahNumber)
+
+        binding.quranPager.post {
+            val targetPage = findFirstPageForSurah(currentSurahNumber)
+            binding.quranPager.setCurrentItem(targetPage, false)
+
+            // NEW: Force-scroll to the surah's first ayah
+            scrollToSurahStart(targetPage, currentSurahNumber)
+        }
     }
 
     private fun setupViewPager(initialSurah: Int, initialAyah: Int) {
@@ -121,18 +129,13 @@ class QuranReaderFragment : Fragment() {
     }
 
     private fun findFirstPageForSurah(surahNumber: Int): Int {
-        // Find the page where the surah actually begins
+        // Find the page where the surah ACTUALLY begins (first ayah)
         return allPages.indexOfFirst { pageRanges ->
             pageRanges.any { range ->
                 range.surah == surahNumber &&
-                        range.start == getFirstLineNumberForSurah(surahNumber)
+                        range.start == getFirstLineNumberForSurah(surahNumber) // Exact start line
             }
-        }.takeIf { it != -1 } ?: run {
-            // Fallback: find any page containing the surah
-            allPages.indexOfFirst { pageRanges ->
-                pageRanges.any { it.surah == surahNumber }
-            }.coerceAtLeast(0)
-        }
+        }.takeIf { it != -1 } ?: 0 // Fallback to page 0 if not found
     }
 
     private fun scrollToAyah(page: Int, surah: Int, ayah: Int) {
@@ -142,19 +145,38 @@ class QuranReaderFragment : Fragment() {
             val scrollView = viewHolder.itemView.findViewById<NestedScrollView>(R.id.page_scroll_view) ?: return
 
             scrollView.post {
-                try {
-                    val ayahView = scrollView.findViewWithTag<View>("ayah_${surah}_$ayah")
-                        ?: scrollView.findViewWithTag<View>("ayah_$ayah")
+                // Find the first ayah of the surah (even if ayahNumber > 1 was passed)
+                val firstAyahTag = "ayah_${surah}_1" // Force "1" to target the surah's start
+                val ayahView = scrollView.findViewWithTag<View>(firstAyahTag)
+                    ?: scrollView.findViewWithTag<View>("ayah_1") // Fallback
 
-                    ayahView?.let {
-                        scrollView.smoothScrollTo(0, it.top)
-                    }
-                } catch (e: Exception) {
-                    Log.e("Navigation", "Scroll failed", e)
+                ayahView?.let {
+                    scrollView.smoothScrollTo(0, it.top) // Snap to top of the surah
                 }
             }
         } catch (e: Exception) {
-            Log.e("Navigation", "Scroll setup failed", e)
+            Log.e("Navigation", "Scroll to surah start failed", e)
+        }
+    }
+
+    private fun scrollToSurahStart(page: Int, surah: Int) {
+        binding.quranPager.post {
+            try {
+                val recyclerView = binding.quranPager.getChildAt(0) as? RecyclerView ?: return@post
+                val viewHolder = recyclerView.findViewHolderForAdapterPosition(page) ?: return@post
+                val scrollView = viewHolder.itemView.findViewById<NestedScrollView>(R.id.page_scroll_view) ?: return@post
+
+                // Find the FIRST ayah of the surah
+                val firstAyahView = scrollView.findViewWithTag<View>("ayah_${surah}_1")
+                    ?: scrollView.findViewWithTag<View>("ayah_1")
+
+                // Scroll to the top of the surah
+                firstAyahView?.let {
+                    scrollView.smoothScrollTo(0, it.top)
+                }
+            } catch (e: Exception) {
+                Log.e("Scroll", "Failed to scroll to surah start", e)
+            }
         }
     }
 
