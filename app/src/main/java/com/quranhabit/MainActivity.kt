@@ -8,11 +8,10 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.quranhabit.data.QuranDatabase
-import com.quranhabit.data.entity.LastReadPosition
 import com.quranhabit.data.repository.LastReadRepository
 import com.quranhabit.ui.hideWithAnimation
 import com.quranhabit.ui.reader.QuranReaderFragment
-import com.quranhabit.ui.statistics.StatisticsFragment
+import com.quranhabit.ui.statistics.ui.StatisticsFragment
 import com.quranhabit.ui.showWithAnimation
 import com.quranhabit.ui.surah.SurahListFragment
 import kotlinx.coroutines.launch

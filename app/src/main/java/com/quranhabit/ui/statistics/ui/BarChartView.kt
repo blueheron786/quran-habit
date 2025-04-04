@@ -1,4 +1,4 @@
-package com.quranhabit.ui.statistics
+package com.quranhabit.ui.statistics.ui
 
 import android.content.Context
 import android.graphics.*

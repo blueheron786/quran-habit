@@ -1,4 +1,4 @@
-package com.quranhabit.ui.statistics
+package com.quranhabit.ui.statistics.ui
 
 import StatisticsViewModel
 import android.app.AlertDialog
@@ -15,12 +15,11 @@ import com.quranhabit.MainActivity
 import com.quranhabit.data.QuranDatabase
 import com.quranhabit.data.dao.StatisticsDao
 import com.quranhabit.databinding.FragmentStatisticsBinding
-import com.quranhabit.utils.DateUtils
+import com.quranhabit.ui.statistics.DailyData
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.Collections
 
 class StatisticsFragment : Fragment() {
 
