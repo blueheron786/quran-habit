@@ -3,6 +3,7 @@ package com.quranhabit.ui.statistics.ui
 import StatisticsViewModel
 import android.app.AlertDialog
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,6 +13,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.quranhabit.MainActivity
+import com.quranhabit.R
 import com.quranhabit.data.QuranDatabase
 import com.quranhabit.data.dao.StatisticsDao
 import com.quranhabit.databinding.FragmentStatisticsBinding
@@ -43,85 +45,113 @@ class StatisticsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         (activity as? MainActivity)?.setBottomNavVisibility(false)
 
-        // Text fields (observe real data)
+        observeTextViewData()
+        observeBarChartData()
+
+        binding.resetButton.setOnClickListener {
+            showResetConfirmationDialog()
+        }
+    }
+
+    private fun observeTextViewData() {
         viewModel.pagesReadToday.observe(viewLifecycleOwner) { pages ->
-            binding.pagesToday.text = "Today: $pages pages"
+            binding.pagesToday.text = getString(R.string.pages_today, pages)
         }
 
         viewModel.pagesReadMonth.observe(viewLifecycleOwner) { pages ->
-            binding.pagesMonth.text = "30 days: $pages pages"
+            binding.pagesMonth.text = getString(R.string.pages_month, pages)
         }
 
         viewModel.totalPagesRead.observe(viewLifecycleOwner) { pages ->
-            binding.totalPages.text = "Lifetime: $pages pages"
+            binding.totalPages.text = getString(R.string.total_pages, pages)
         }
 
         viewModel.timeReadToday.observe(viewLifecycleOwner) { seconds ->
             val minutes = seconds / 60
-            binding.timeToday.text = "Time Today: $minutes" + "m"
+            binding.timeToday.text = getString(R.string.time_today, minutes)
         }
 
         viewModel.totalTimeRead.observe(viewLifecycleOwner) { seconds ->
             val minutes = seconds / 60
             val hours = minutes / 60
             val displayMinutes = minutes % 60
-            binding.totalTime.text = "Total Time: $hours" + "h" + ", $displayMinutes" + "m"
+            binding.totalTime.text = getString(R.string.total_time, hours, displayMinutes)
         }
+    }
 
-        // Observe monthly pages data
+    private fun observeBarChartData() {
+        observeMonthlyPagesData()
+        observeWeeklyTimeData()
+    }
+
+    private fun observeMonthlyPagesData() {
         lifecycleScope.launch {
             viewModel.monthlyData.collectLatest { dailyDataList ->
-                val displayDays = binding.monthlyPagesChart.displayDays
-                val latestDataDate = dailyDataList.maxByOrNull { LocalDate.parse(it.date, dateFormatter) }
-                    ?.let { LocalDate.parse(it.date, dateFormatter) } ?: LocalDate.now()
-
-                // Change this to make the latest date the START of the range
-                val endDate = latestDataDate.plusDays(displayDays.toLong() - 1)
-                val startDate = latestDataDate
-
-                val allDatesInRange = generateDateRange(startDate, endDate)
-                val paddedDataMap = padDataWithZerosToMap(dailyDataList)
-
-                val pagesReadList = allDatesInRange.map { paddedDataMap[it] ?: 0 }
-                val dateList = allDatesInRange
-
-                binding.monthlyPagesChart.goal = 20
-                binding.monthlyPagesChart.useNumericLabels = true
-                binding.monthlyPagesChart.roundBars = true
-                binding.monthlyPagesChart.labelInterval = 5
-                binding.monthlyPagesChart.setData(pagesReadList, dateList)
+                updateBarChart(
+                    binding.monthlyPagesChart,
+                    dailyDataList,
+                    30,
+                    20,
+                    { it.pagesRead },
+                    useNumericLabels = true,
+                    roundBars = true,
+                    labelInterval = 5,
+                    tag = "MonthlyPages"
+                )
             }
         }
+    }
 
-        // Observe weekly time data
+    private fun observeWeeklyTimeData() {
         lifecycleScope.launch {
             viewModel.weeklyTimeData.collectLatest { dailyDataList ->
-                val displayDays = binding.weeklyTimeChart.displayDays
-                val latestDataDate = dailyDataList.maxByOrNull { LocalDate.parse(it.date, dateFormatter) }
-                    ?.let { LocalDate.parse(it.date, dateFormatter) } ?: LocalDate.now()
-
-                // Change this to make the latest date the START of the range
-                val endDate = latestDataDate.plusDays(displayDays.toLong() - 1)
-                val startDate = latestDataDate
-
-                val allDatesInRange = generateDateRange(startDate, endDate)
-                val paddedDataMap = padTimeDataWithZerosToMap(dailyDataList)
-
-                val timeSpentList = allDatesInRange.map { paddedDataMap[it] ?: 0 }
-                val dateListWeekly = allDatesInRange
-
-                binding.weeklyTimeChart.goal = 30
-                binding.weeklyTimeChart.useNumericLabels = true
-                binding.weeklyTimeChart.barSpacingFactor = 2.5f
-                binding.weeklyTimeChart.displayDays = 7
-                binding.weeklyTimeChart.setData(timeSpentList, dateListWeekly)
+                updateBarChart(
+                    binding.weeklyTimeChart,
+                    dailyDataList,
+                    7,
+                    30,
+                    { it.secondsReading / 60 },
+                    useNumericLabels = true,
+                    barSpacingFactor = 2.5f,
+                    tag = "WeeklyTime"
+                )
             }
         }
+    }
 
-        // Buttonz
-        binding.resetButton.setOnClickListener {
-            showResetConfirmationDialog()
-        }
+    private fun updateBarChart(
+        barChartView: BarChartView,
+        dailyDataList: List<DailyData>,
+        displayDays: Int,
+        goal: Int,
+        valueSelector: (DailyData) -> Int,
+        useNumericLabels: Boolean = false,
+        roundBars: Boolean = false,
+        labelInterval: Int = 5,
+        barSpacingFactor: Float = 1f,
+        tag: String
+    ) {
+        val latestDataDate = dailyDataList.maxByOrNull { LocalDate.parse(it.date, dateFormatter) }
+            ?.let { LocalDate.parse(it.date, dateFormatter) } ?: LocalDate.now()
+
+        val endDate: LocalDate = latestDataDate
+        val startDate: LocalDate = endDate.minusDays(displayDays.toLong() - 1)
+
+        val allDatesInRange = generateDateRange(startDate, endDate)
+        val paddedDataMap = padDataWithZerosToMap(dailyDataList, valueSelector)
+
+        val valueList = allDatesInRange.map { paddedDataMap[it] ?: 0 }
+        val dateList = allDatesInRange
+
+        Log.e("StatisticsFragment", "$tag - valueList size: ${valueList.size}, dateList size: ${dateList.size}")
+
+        barChartView.goal = goal
+        barChartView.useNumericLabels = useNumericLabels
+        barChartView.roundBars = roundBars
+        barChartView.labelInterval = labelInterval
+        barChartView.barSpacingFactor = barSpacingFactor
+        barChartView.displayDays = displayDays // Ensure displayDays is set correctly
+        barChartView.setData(valueList, dateList)
     }
 
     private fun generateDateRange(startDate: LocalDate, endDate: LocalDate): List<LocalDate> {
@@ -134,28 +164,24 @@ class StatisticsFragment : Fragment() {
         return dates
     }
 
-    private fun padDataWithZerosToMap(actualData: List<DailyData>): Map<LocalDate, Int> {
-        return actualData.associateBy<DailyData, LocalDate, Int>(
+    private fun padDataWithZerosToMap(
+        actualData: List<DailyData>,
+        valueSelector: (DailyData) -> Int
+    ): Map<LocalDate, Int> {
+        return actualData.associateBy(
             keySelector = { LocalDate.parse(it.date, dateFormatter) },
-            valueTransform = { it.pagesRead }
-        )
-    }
-
-    private fun padTimeDataWithZerosToMap(actualData: List<DailyData>): Map<LocalDate, Int> {
-        return actualData.associateBy<DailyData, LocalDate, Int>(
-            keySelector = { LocalDate.parse(it.date, dateFormatter) },
-            valueTransform = { it.secondsReading / 60 } // Corrected typo here
+            valueTransform = valueSelector
         )
     }
 
     private fun showResetConfirmationDialog() {
         AlertDialog.Builder(requireContext())
-            .setTitle("Reset Statistics")
-            .setMessage("Are you sure you want to reset all reading statistics? This cannot be undone.")
-            .setPositiveButton("Yes") { _, _ ->
+            .setTitle(R.string.reset_statistics_title)
+            .setMessage(R.string.reset_statistics_message)
+            .setPositiveButton(R.string.yes) { _, _ ->
                 viewModel.resetStatistics()
             }
-            .setNegativeButton("No", null)
+            .setNegativeButton(R.string.no, null)
             .show()
     }
 
