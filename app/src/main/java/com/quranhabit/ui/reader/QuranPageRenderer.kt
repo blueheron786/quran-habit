@@ -68,8 +68,28 @@ class QuranPageRenderer(
             false
         )
         binding.ayahNumberTextView.text = ayah.ayahNumber.toString()
-        binding.ayahTextView.text = ayah.text
+        binding.ayahTextView.text = fixMissingSmallStops(ayah.text)
         binding.root.tag = "ayah_${ayah.surahNumber}_${ayah.ayahNumber}"
         container.addView(binding.root)
+    }
+
+    private fun fixMissingSmallStops(quranText: String): String {
+        var fixedText = quranText
+
+        val salaa = "\u06D6" // U+06D6
+        val qala = "\u06D7"  // U+06D7
+        val smallJeem = "\u06DA" // U+06DA
+        val smallLaa = "\u06D9" // U+06D9
+
+        val smallStops = listOf(salaa, qala, smallJeem, smallLaa)
+
+        for (smallStop in smallStops) {
+            // Prepend word joiner so tiny stop doesn't appear at the start of a new line.
+            // \u2060 is "Word Joiner" which forces stops to stay attached to the previous word,
+            // but without adding visible space.
+            fixedText = fixedText.replace(smallStop, "\u2060$smallStop")
+        }
+
+        return fixedText
     }
 }
