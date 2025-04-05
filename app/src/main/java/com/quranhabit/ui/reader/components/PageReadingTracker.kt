@@ -16,6 +16,8 @@ class PageReadingTracker(
     private val statisticsDao: StatisticsDao,
     private val lifecycleScope: CoroutineScope
 ) {
+    var onPageMarkedRead: ((page: Int, seconds: Int) -> Unit) = { _, _ -> }
+
     private val timeTracker = ReadingTimeTracker()
     private var pageTimer: CountDownTimer? = null
     private var bottomTimer: CountDownTimer? = null
@@ -98,6 +100,10 @@ class PageReadingTracker(
             pageMarked = true
             pageReadStates[currentPagePosition] = true
             logReadingTime(timeTracker.getTotalSeconds())
+
+            val seconds = timeTracker.getTotalSeconds()
+            onPageMarkedRead(currentPagePosition, seconds)
+
             timeTracker.reset()
         }
     }

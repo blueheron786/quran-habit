@@ -2,6 +2,8 @@ package com.quranhabit.data.repository
 
 import com.quranhabit.data.dao.LastReadPositionDao
 import com.quranhabit.data.entity.LastReadPosition
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class LastReadRepository(private val dao: LastReadPositionDao) {
     suspend fun savePosition(surah: Int, ayah: Int, page: Int, scrollY: Int) {
@@ -14,9 +16,9 @@ class LastReadRepository(private val dao: LastReadPositionDao) {
         ))
     }
 
-    suspend fun getLastPosition() = dao.getLastPosition()
-
-    suspend fun getScrollPosition(page: Int): Int? {
-        return dao.getScrollPosition(page)
+    suspend fun getLastReadPosition(): LastReadPosition? {
+        return withContext(Dispatchers.IO) {
+            dao.getLastPosition()
+        }
     }
 }

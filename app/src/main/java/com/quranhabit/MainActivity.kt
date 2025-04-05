@@ -59,7 +59,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 val position = LastReadRepository(
                     QuranDatabase.getDatabase(this@MainActivity).lastReadPositionDao()
-                ).getLastPosition()
+                ).getLastReadPosition()
 
                 if (position != null) {
                     val args = Bundle().apply {

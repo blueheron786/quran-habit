@@ -19,12 +19,19 @@ import com.quranhabit.MainActivity
 import com.quranhabit.R
 import com.quranhabit.data.QuranDatabase
 import com.quranhabit.data.SurahRepository
+import com.quranhabit.data.entity.PagesReadOnDay
 import com.quranhabit.databinding.FragmentQuranReaderBinding
 import com.quranhabit.data.repository.LastReadRepository
 import com.quranhabit.ui.reader.adapter.QuranPageAdapter
 import com.quranhabit.ui.reader.components.PageReadingTracker
 import com.quranhabit.ui.reader.model.PageAyahRange
 import com.quranhabit.ui.surah.Surah
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class QuranReaderFragment : Fragment() {
 
@@ -72,8 +79,22 @@ class QuranReaderFragment : Fragment() {
         Log.d("Navigation", "Initial surah: $currentSurahNumber, ayah: $ayahNumber")
 
         // Initialize components
-        readingTracker = PageReadingTracker(statisticsDao, lifecycleScope)
-        positionSaver = PositionSaver(prefs, lastReadRepo, statisticsDao)
+        readingTracker = PageReadingTracker(statisticsDao, lifecycleScope).apply {
+            onPageMarkedRead = { page, seconds ->
+                // Proper coroutine launch
+                lifecycleScope.launch {
+                    try {
+                        logPageRead(seconds)
+                        val surah = getSurahForPage(page).number
+                        positionSaver.savePosition(surah, 1, page, 0)
+                    } catch (e: Exception) {
+                        Log.e("PositionSaver", "Error saving position", e)
+                    }
+                }
+            }
+        }
+
+        positionSaver = PositionSaver(prefs, lastReadRepo)
         headerUpdater = HeaderUpdater(binding)
         pageRenderer = QuranPageRenderer(
             requireContext(),
@@ -101,8 +122,30 @@ class QuranReaderFragment : Fragment() {
         }
     }
 
+    private suspend fun logPageRead(secondsRead: Int) {
+        withContext(Dispatchers.IO) {
+            val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+            val existingRecord = statisticsDao.getByDate(currentDate)
+
+            if (existingRecord != null) {
+                statisticsDao.upsert(existingRecord.copy(
+                    pagesRead = existingRecord.pagesRead + 1,
+                    secondsSpendReading = existingRecord.secondsSpendReading + secondsRead
+                ))
+            } else {
+                statisticsDao.upsert(
+                    PagesReadOnDay(
+                        date = currentDate,
+                        pagesRead = 1,
+                        secondsSpendReading = secondsRead
+                    )
+                )
+            }
+        }
+    }
+
     private fun setupViewPager(initialSurah: Int, initialAyah: Int) {
-        binding.quranPager.adapter = QuranPageAdapter(this, allPages, pageRenderer)
+        binding.quranPager.adapter = QuranPageAdapter(allPages, pageRenderer)
         binding.quranPager.layoutDirection = View.LAYOUT_DIRECTION_RTL
         binding.quranPager.offscreenPageLimit = 2
 
@@ -220,6 +263,32 @@ class QuranReaderFragment : Fragment() {
             ?.start ?: 0
     }
 
+
+
+    private suspend fun saveCurrentPosition() {
+        withContext(Dispatchers.IO) {
+            val currentPage = binding.quranPager.currentItem
+            if (currentPage in allPages.indices) {
+                val surah = getSurahForPage(currentPage).number
+                val ayahRanges = allPages[currentPage]
+                val firstAyahNumber = ayahRanges.first().start - getFirstLineNumberForSurah(surah) + 1
+
+                positionSaver.saveLastReadAyah(surah, firstAyahNumber, currentPage)
+
+                val scrollY = try {
+                    (binding.quranPager.getChildAt(0) as? RecyclerView)
+                        ?.findViewHolderForAdapterPosition(currentPage)
+                        ?.itemView?.findViewById<NestedScrollView>(R.id.page_scroll_view)
+                        ?.scrollY ?: 0
+                } catch (e: Exception) {
+                    0
+                }
+
+                positionSaver.savePosition(surah, firstAyahNumber, currentPage, scrollY)
+            }
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         readingTracker.startTracking()
@@ -229,8 +298,9 @@ class QuranReaderFragment : Fragment() {
     override fun onPause() {
         super.onPause()
         readingTracker.pauseTracking()
-        saveCurrentPosition()
-        (requireActivity() as MainActivity).setBottomNavVisibility(true)
+        lifecycleScope.launch {
+            saveCurrentPosition()
+        }
     }
 
     override fun onDestroyView() {
@@ -239,28 +309,16 @@ class QuranReaderFragment : Fragment() {
         _binding = null
     }
 
-    private fun saveCurrentPosition() {
-        val currentPage = binding.quranPager.currentItem
-        if (currentPage in allPages.indices) {
-            val surah = getSurahForPage(currentPage).number
-            val ayahRanges = allPages[currentPage]
-
-            // Get the first ayah of the current page instead of last
-            val firstAyahRange = ayahRanges.first()
-            val firstAyahNumber = firstAyahRange.start - getFirstLineNumberForSurah(firstAyahRange.surah) + 1
-
-            positionSaver.saveLastReadAyah(surah, firstAyahNumber, currentPage)
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                readingTracker.pauseTracking()
-                saveCurrentPosition()
-                remove() // Use remove() instead of disabling
-                requireActivity().onBackPressedDispatcher.onBackPressed()
+                lifecycleScope.launch {
+                    readingTracker.pauseTracking()
+                    saveCurrentPosition()
+                    remove()
+                    requireActivity().onBackPressedDispatcher.onBackPressed()
+                }
             }
         }
         requireActivity().onBackPressedDispatcher.addCallback(this, callback)
