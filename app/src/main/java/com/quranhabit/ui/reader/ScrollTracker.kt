@@ -7,8 +7,8 @@ class ScrollTracker {
     private var scrollView: NestedScrollView? = null
     private var isTracking = false
 
-    var onScrollStateChanged: ((Boolean) -> Unit)? = null
-    var onScrollPositionChanged: ((Boolean) -> Unit)? = null
+    private var onScrollStateChanged: ((Boolean) -> Unit)? = null
+    private var onScrollPositionChanged: ((Boolean) -> Unit)? = null
     var onReachedBottom: (() -> Unit)? = null
     var onScrolledUpFromBottom: (() -> Unit)? = null
 
@@ -51,8 +51,6 @@ class ScrollTracker {
         isTracking = false
         wasAtBottom = false
     }
-
-    fun getScrollY(): Int = scrollView?.scrollY ?: 0
 
     private fun isAtBottom(scrollView: NestedScrollView): Boolean {
         return scrollView.getChildAt(0)?.let { child ->

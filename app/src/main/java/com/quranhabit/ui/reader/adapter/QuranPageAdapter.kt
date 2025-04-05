@@ -5,11 +5,9 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.quranhabit.databinding.ItemPageBinding
 import com.quranhabit.ui.reader.QuranPageRenderer
-import com.quranhabit.ui.reader.QuranReaderFragment
 import com.quranhabit.ui.reader.model.PageAyahRange
 
 class QuranPageAdapter(
-    private val fragment: QuranReaderFragment,
     private val allPages: List<List<PageAyahRange>>,
     private val pageRenderer: QuranPageRenderer
 ) : RecyclerView.Adapter<QuranPageAdapter.PageViewHolder>() {

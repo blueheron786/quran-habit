@@ -1,8 +1,9 @@
-package com.quranhabit.ui.reader
+package com.quranhabit.ui.reader.components
 
 import android.os.CountDownTimer
 import com.quranhabit.data.dao.StatisticsDao
 import com.quranhabit.data.entity.PagesReadOnDay
+import com.quranhabit.ui.reader.ReadingTimeTracker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -57,7 +58,7 @@ class PageReadingTracker(
         }
     }
 
-    fun startPageReadTimer(onComplete: () -> Unit = { checkPageReadConditions() }) {
+    private fun startPageReadTimer(onComplete: () -> Unit = { checkPageReadConditions() }) {
         pageTimer?.cancel()
         pageTimer = object : CountDownTimer(PAGE_READ_DELAY_MS, PAGE_READ_CHECK_INTERVAL) {
             override fun onTick(millisUntilFinished: Long) {}
@@ -101,7 +102,7 @@ class PageReadingTracker(
         }
     }
 
-    fun logReadingTime(seconds: Int) {
+    private fun logReadingTime(seconds: Int) {
         if (seconds <= 0) return
 
         lifecycleScope.launch {

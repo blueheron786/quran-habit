@@ -22,7 +22,7 @@ import com.quranhabit.data.SurahRepository
 import com.quranhabit.databinding.FragmentQuranReaderBinding
 import com.quranhabit.data.repository.LastReadRepository
 import com.quranhabit.ui.reader.adapter.QuranPageAdapter
-import com.quranhabit.ui.reader.components.NavigationHandler
+import com.quranhabit.ui.reader.components.PageReadingTracker
 import com.quranhabit.ui.reader.model.PageAyahRange
 import com.quranhabit.ui.surah.Surah
 
@@ -35,6 +35,7 @@ class QuranReaderFragment : Fragment() {
     private lateinit var pageRenderer: QuranPageRenderer
     private lateinit var positionSaver: PositionSaver
     private lateinit var headerUpdater: HeaderUpdater
+    private lateinit var scrollTracker: ScrollTracker
 
     private lateinit var allPages: List<List<PageAyahRange>>
     private lateinit var quranLines: List<String>
@@ -47,10 +48,6 @@ class QuranReaderFragment : Fragment() {
         LastReadRepository(QuranDatabase.getDatabase(requireContext()).lastReadPositionDao())
     }
     private val prefs by lazy { requireContext().getSharedPreferences("QuranPrefs", Context.MODE_PRIVATE) }
-
-    // Getter for adapter access
-    internal fun getReadingTracker(): PageReadingTracker = readingTracker
-    internal fun getCurrentPagePosition(): Int = binding.quranPager.currentItem
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -83,6 +80,10 @@ class QuranReaderFragment : Fragment() {
             quranLines,
             ::getFirstLineNumberForSurah
         )
+        scrollTracker = ScrollTracker().apply {
+            onReachedBottom = { readingTracker.handleBottomPositionChange(true) }
+            onScrolledUpFromBottom = { readingTracker.handleBottomPositionChange(false) }
+        }
 
         // Disable ViewPager2's initial page set
         binding.quranPager.isSaveEnabled = false
@@ -115,6 +116,15 @@ class QuranReaderFragment : Fragment() {
                 if (ranges.isNotEmpty()) {
                     currentSurahNumber = ranges.first().surah
                     headerUpdater.update(currentSurahNumber, position + 1)
+                    handlePageChange(position) // Add this line
+                }
+
+                // Attach scroll tracker to current page
+                binding.quranPager.post {
+                    val recyclerView = binding.quranPager.getChildAt(0) as? RecyclerView ?: return@post
+                    val viewHolder = recyclerView.findViewHolderForAdapterPosition(position) ?: return@post
+                    val scrollView = viewHolder.itemView.findViewById<NestedScrollView>(R.id.page_scroll_view) ?: return@post
+                    scrollTracker.attach(scrollView)
                 }
             }
         })
@@ -147,7 +157,7 @@ class QuranReaderFragment : Fragment() {
                 // Find the first ayah of the surah (even if ayahNumber > 1 was passed)
                 val firstAyahTag = "ayah_${surah}_1" // Force "1" to target the surah's start
                 val ayahView = scrollView.findViewWithTag<View>(firstAyahTag)
-                    ?: scrollView.findViewWithTag<View>("ayah_1") // Fallback
+                    ?: scrollView.findViewWithTag<View>("ayah_$ayah") // Fallback
 
                 ayahView?.let {
                     scrollView.smoothScrollTo(0, it.top) // Snap to top of the surah
@@ -234,10 +244,12 @@ class QuranReaderFragment : Fragment() {
         if (currentPage in allPages.indices) {
             val surah = getSurahForPage(currentPage).number
             val ayahRanges = allPages[currentPage]
-            val lastAyahRange = ayahRanges.last()
-            val lastAyahNumber = lastAyahRange.end - getFirstLineNumberForSurah(lastAyahRange.surah) + 1
 
-            positionSaver.saveLastReadAyah(surah, lastAyahNumber, currentPage)
+            // Get the first ayah of the current page instead of last
+            val firstAyahRange = ayahRanges.first()
+            val firstAyahNumber = firstAyahRange.start - getFirstLineNumberForSurah(firstAyahRange.surah) + 1
+
+            positionSaver.saveLastReadAyah(surah, firstAyahNumber, currentPage)
         }
     }
 
@@ -247,8 +259,8 @@ class QuranReaderFragment : Fragment() {
             override fun handleOnBackPressed() {
                 readingTracker.pauseTracking()
                 saveCurrentPosition()
-                isEnabled = false
-                requireActivity().onBackPressed()
+                remove() // Use remove() instead of disabling
+                requireActivity().onBackPressedDispatcher.onBackPressed()
             }
         }
         requireActivity().onBackPressedDispatcher.addCallback(this, callback)
