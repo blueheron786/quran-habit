@@ -40,12 +40,6 @@ class ScrollTracker {
         lastScrollY = scrollView?.scrollY ?: 0
     }
 
-    fun restoreScrollPosition() {
-        scrollView?.post {
-            scrollView?.scrollTo(0, lastScrollY)
-        }
-    }
-
     fun detach() {
         saveScrollPosition()
 
