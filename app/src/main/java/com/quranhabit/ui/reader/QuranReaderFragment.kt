@@ -39,6 +39,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import androidx.core.content.edit
+import com.quranhabit.ui.clearBinding
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelChildren
 import kotlin.math.max
 
 // Our awesome, flaky way of detecting and inserting the basmalla header
@@ -62,13 +66,13 @@ class QuranReaderFragment : Fragment() {
     private val lastReadRepo by lazy {
         LastReadRepository(QuranDatabase.getDatabase(requireContext()).lastReadPositionDao())
     }
+    private lateinit var databaseHelper: DatabaseHelper
 
     // Checking if we read a page
     private var pageScrollState = false
     private var pageTimer: CountDownTimer? = null
     private var currentPagePosition = -1
     private var pageReadStates = mutableMapOf<Int, Boolean>() // Track which pages have been marked as read
-    private var isTrackingScroll = false
     private var pageMarked = false
     private var isAtBottom = false
     private var bottomTimer: CountDownTimer? = null
@@ -429,10 +433,22 @@ class QuranReaderFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        super.onDestroyView()
+
+        // 1. Cancel all timers safely
         pageTimer?.cancel()
         bottomTimer?.cancel()
-        isTrackingScroll = false
-        super.onDestroyView()
+        readingTimeTracker.pause()
+
+        // 2. Clean up database helper
+        databaseHelper.cleanup()
+
+        // 3. Clear binding safely with extension
+        clearBinding(_binding) {
+            // Optional: Add any view-specific cleanup here
+            quranPager.adapter = null
+        }
+
         _binding = null
     }
 
@@ -584,48 +600,28 @@ class QuranReaderFragment : Fragment() {
         }
     }
 
-    private fun markPageAsRead(pageNumber: Int) {
-        // 1. First pause and capture the reading time
-        val secondsRead = readingTimeTracker.pause()
+    private inner class DatabaseHelper {
+        private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-        // Only proceed if we actually spent time reading
-        if (secondsRead <= 0) {
-            Log.d("PageMark", "Not marking page $pageNumber - no reading time recorded")
-            readingTimeTracker.reset()
-            readingTimeTracker.start()
-            return
-        }
+        // Unified method for saving reading progress
+        fun saveReadingProgress(
+            surahNumber: Int,
+            ayahNumber: Int,
+            pageNumber: Int,
+            scrollY: Int,
+            secondsRead: Int,
+            onComplete: (() -> Unit)? = null,
+            onError: ((Exception) -> Unit)? = null
+        ) {
+            ioScope.launch {
+                try {
+                    // 1. Save last read position
+                    lastReadRepo.savePosition(surahNumber, ayahNumber, pageNumber, scrollY)
 
-        // 2. Get all the page data we need
-        val surahNumber = getSurahForPage(pageNumber).number
-        val ayahRanges = allPages[pageNumber]
-        val lastAyahRange = ayahRanges.last()
-        val lastAyahNumber = lastAyahRange.end - getFirstLineNumberForSurah(lastAyahRange.surah) + 1
+                    // 2. Update statistics
+                    val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+                    val existingRecord = statisticsDao.getByDate(currentDate)
 
-        // 3. Get scroll position from ViewHolder
-        val recyclerView = binding.quranPager.getChildAt(0) as? RecyclerView
-        val viewHolder = recyclerView?.findViewHolderForAdapterPosition(pageNumber) as? QuranPageAdapter.PageViewHolder
-        val scrollY = viewHolder?.scrollTracker?.getScrollY() ?: 0
-
-        // 4. Save reading progress immediately to SharedPreferences
-        saveLastReadAyah(surahNumber, lastAyahNumber)
-        lastPageMarkedAsRead = pageNumber
-
-        // 5. Record in database
-        lifecycleScope.launch {
-            try {
-                // Save position in Room database
-                lastReadRepo.savePosition(surahNumber, lastAyahNumber, pageNumber, scrollY)
-
-                val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-
-                // Get existing record for today
-                val existingRecord = withContext(Dispatchers.IO) {
-                    statisticsDao.getByDate(currentDate)
-                }
-
-                // Update statistics
-                withContext(Dispatchers.IO) {
                     if (existingRecord != null) {
                         statisticsDao.upsert(
                             existingRecord.copy(
@@ -642,26 +638,58 @@ class QuranReaderFragment : Fragment() {
                             )
                         )
                     }
-                }
 
-                // Show feedback and reset timer on main thread
-                withContext(Dispatchers.Main) {
-                    showPageReadFeedback()
-                    readingTimeTracker.reset()
-                    readingTimeTracker.start() // Start fresh for next page
-                }
-
-                Log.d("QuranReader", "Marked page $pageNumber as read with $secondsRead seconds spent")
-
-            } catch (e: Exception) {
-                Log.e("QuranReader", "Error marking page as read", e)
-                // Ensure timer gets reset even if there's an error
-                withContext(Dispatchers.Main) {
-                    readingTimeTracker.reset()
-                    readingTimeTracker.start()
+                    withContext(Dispatchers.Main) {
+                        onComplete?.invoke()
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        onError?.invoke(e)
+                        Log.e("DatabaseHelper", "Save failed", e)
+                    }
                 }
             }
         }
+
+        fun cleanup() {
+            ioScope.coroutineContext.cancelChildren()
+        }
+    }
+
+    private fun markPageAsRead(pageNumber: Int) {
+        val secondsRead = readingTimeTracker.pause()
+        if (secondsRead <= 0) {
+            readingTimeTracker.reset()
+            readingTimeTracker.start()
+            return
+        }
+
+        val surahNumber = getSurahForPage(pageNumber).number
+        val ayahRanges = allPages[pageNumber]
+        val lastAyahRange = ayahRanges.last()
+        val lastAyahNumber = lastAyahRange.end - getFirstLineNumberForSurah(lastAyahRange.surah) + 1
+
+        val recyclerView = binding.quranPager.getChildAt(0) as? RecyclerView
+        val viewHolder = recyclerView?.findViewHolderForAdapterPosition(pageNumber) as? QuranPageAdapter.PageViewHolder
+        val scrollY = viewHolder?.scrollTracker?.getScrollY() ?: 0
+
+        databaseHelper.saveReadingProgress(
+            surahNumber = surahNumber,
+            ayahNumber = lastAyahNumber,
+            pageNumber = pageNumber,
+            scrollY = scrollY,
+            secondsRead = secondsRead,
+            onComplete = {
+                showPageReadFeedback()
+                readingTimeTracker.reset()
+                readingTimeTracker.start()
+            },
+            onError = { e ->
+                // Optional: Show error to user
+                readingTimeTracker.reset()
+                readingTimeTracker.start()
+            }
+        )
     }
 
     override fun onPause() {
@@ -705,6 +733,8 @@ class QuranReaderFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        databaseHelper = DatabaseHelper()
+
         val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 // 1. Pause the timer (captures current reading session)
