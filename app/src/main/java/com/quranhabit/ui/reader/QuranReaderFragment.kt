@@ -241,6 +241,8 @@ class QuranReaderFragment : Fragment() {
             private var scrollState = ViewPager2.SCROLL_STATE_IDLE
 
             override fun onPageSelected(newPage: Int) {
+                saveCurrentPosition()
+
                 // 1. Pause and log time from previous page
                 val secondsRead = readingTimeTracker.pause()
                 if (secondsRead > 0) {
