@@ -39,6 +39,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import androidx.core.content.edit
+import kotlin.math.max
 
 // Our awesome, flaky way of detecting and inserting the basmalla header
 private const val BASMALLA_TEXT = "بِسمِ ٱللَّهِ ٱلرَّحمَـٰنِ ٱلرَّحِيمِ"
@@ -186,22 +187,25 @@ class QuranReaderFragment : Fragment() {
                         scrollView?.post {
                             try {
                                 if (savedPosition != null) {
-                                    // Restore saved scroll position
                                     scrollView.scrollTo(0, savedPosition)
                                 } else {
-                                    // For new surah, scroll to ayah 1 or specified ayah
                                     val ayahView = scrollView.findViewWithTag<View?>("ayah_${surah}_$ayah")
                                         ?: scrollView.findViewWithTag<View?>("ayah_$ayah")
 
                                     ayahView?.let {
-                                        scrollView.smoothScrollTo(0, it.top)
+                                        // Simple fixed backup for basmalah (adjust size as needed)
+                                        val backup = if (ayah == 1) {
+                                            (70 * resources.displayMetrics.density).toInt() // Convert dp to pixels
+                                        } else {
+                                            0
+                                        }
+                                        val scrollPosition = max(0, it.top - backup)
+                                        scrollView.smoothScrollTo(0, scrollPosition)
                                     } ?: run {
-                                        // Fallback to top if ayah not found
                                         scrollView.smoothScrollTo(0, 0)
                                     }
                                 }
                             } catch (e: Exception) {
-                                Log.e("QuranReader", "Ayah scroll failed: ${e.message}")
                                 scrollView.scrollTo(0, 0)
                             }
                         }
