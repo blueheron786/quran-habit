@@ -122,8 +122,13 @@ class QuranReaderFragment : Fragment() {
         setupViewPager(initialPage)
         updateHeader(currentSurahNumber, initialPage)
 
-        // Only scroll to ayah if we're continuing from a saved position
-        if (arguments?.containsKey("ayahNumber") == true) {
+        // Always scroll to first ayah unless we're continuing from a saved position
+        if (arguments?.containsKey("ayahNumber") != true) {
+            binding.quranPager.postDelayed({
+                scrollToAyah(currentSurahNumber, 1) // Always start at ayah 1 for new surah
+            }, 300)
+        } else {
+            // Only scroll to ayah if we're continuing from a saved position
             binding.quranPager.postDelayed({
                 scrollToAyah(currentSurahNumber, ayahNumber)
             }, 300)
@@ -158,9 +163,10 @@ class QuranReaderFragment : Fragment() {
         try {
             val targetPage = findPageForAyah(surah, ayah).coerceIn(0, allPages.size - 1)
 
-            // Only change page if necessary
-            if (binding.quranPager.currentItem != targetPage) {
+            // Always change page if surah changed, even if same page number
+            if (binding.quranPager.currentItem != targetPage || surah != currentSurahNumber) {
                 binding.quranPager.setCurrentItem(targetPage, false)
+                currentSurahNumber = surah // Update current surah
             }
 
             binding.quranPager.postDelayed({
@@ -170,28 +176,28 @@ class QuranReaderFragment : Fragment() {
                     val scrollView = viewHolder?.itemView?.findViewById<NestedScrollView>(R.id.page_scroll_view)
 
                     lifecycleScope.launch {
-                        // Check if we have a saved scroll position for this page
-                        val savedPosition = lastReadRepo.getScrollPosition(targetPage)
+                        // Only use saved position if we're continuing reading
+                        val savedPosition = if (arguments?.containsKey("ayahNumber") == true) {
+                            lastReadRepo.getScrollPosition(targetPage)
+                        } else {
+                            null
+                        }
 
                         scrollView?.post {
                             try {
                                 if (savedPosition != null) {
                                     // Restore saved scroll position
                                     scrollView.scrollTo(0, savedPosition)
-                                    Log.d("ScrollRestore", "Restored scroll position: $savedPosition for page $targetPage")
-                                } else if (arguments?.containsKey("ayahNumber") == true) {
-                                    // Only scroll to ayah if we're continuing from a saved position
-                                    // and don't have a saved scroll position
+                                } else {
+                                    // For new surah, scroll to ayah 1 or specified ayah
                                     val ayahView = scrollView.findViewWithTag<View?>("ayah_${surah}_$ayah")
                                         ?: scrollView.findViewWithTag<View?>("ayah_$ayah")
 
                                     ayahView?.let {
                                         scrollView.smoothScrollTo(0, it.top)
-                                        Log.d("AyahScroll", "Scrolling to ayah ${surah}:$ayah at position ${it.top}")
                                     } ?: run {
                                         // Fallback to top if ayah not found
                                         scrollView.smoothScrollTo(0, 0)
-                                        Log.d("AyahScroll", "Ayah not found, scrolling to top")
                                     }
                                 }
                             } catch (e: Exception) {
