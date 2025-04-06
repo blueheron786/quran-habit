@@ -45,7 +45,7 @@ class ScrollTracker {
         return scrollView?.scrollY ?: 0
     }
 
-    fun saveScrollPosition() {
+    private fun saveScrollPosition() {
         lastScrollY = scrollView?.scrollY ?: 0
     }
 

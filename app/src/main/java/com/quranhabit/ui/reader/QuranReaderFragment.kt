@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.os.CountDownTimer
 import android.util.Log
 import android.util.SparseArray
+import android.util.SparseIntArray
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -258,8 +259,6 @@ class QuranReaderFragment : Fragment() {
         }
 
         binding.quranPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            private var scrollState = ViewPager2.SCROLL_STATE_IDLE
-
             override fun onPageSelected(newPage: Int) {
                 Log.d("PageFlow", "Page selected: $newPage")
                 saveCurrentPosition()
@@ -485,7 +484,7 @@ class QuranReaderFragment : Fragment() {
         private val quranLines: List<String>
     ) : RecyclerView.Adapter<QuranPageAdapter.PageViewHolder>() {
 
-        private val scrollPositions = SparseArray<Int>()
+        private val scrollPositions = SparseIntArray()
         private val scrollTrackers = mutableMapOf<Int, ScrollTracker>()
 
         inner class PageViewHolder(val binding: ItemPageBinding) : RecyclerView.ViewHolder(binding.root) {
