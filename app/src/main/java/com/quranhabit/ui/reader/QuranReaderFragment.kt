@@ -2,14 +2,10 @@ package com.quranhabit.ui.reader
 
 import ReadingTimeTracker
 import android.content.Context
-import android.graphics.Typeface
-import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
-import android.os.Trace.isEnabled
 import android.util.Log
 import android.util.SparseArray
-import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -51,7 +47,6 @@ class QuranReaderFragment : Fragment() {
 
     private var _binding: FragmentQuranReaderBinding? = null
     private val binding get() = _binding!!
-    private lateinit var arabicTypeface: Typeface
 
     // What page are we on?
     private lateinit var pageAdapter: QuranPageAdapter
@@ -201,7 +196,7 @@ class QuranReaderFragment : Fragment() {
                                 }
                             } catch (e: Exception) {
                                 Log.e("QuranReader", "Ayah scroll failed: ${e.message}")
-                                scrollView?.scrollTo(0, 0)
+                                scrollView.scrollTo(0, 0)
                             }
                         }
                     }
@@ -551,9 +546,7 @@ class QuranReaderFragment : Fragment() {
                             false
                         )
                         ayahBinding.ayahNumberTextView.text = ayah.ayahNumber.toString()
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                            ayahBinding.ayahTextView.fontFeatureSettings = "'liga' on, 'clig' on"  // Forces ligature rendering
-                        }
+                        ayahBinding.ayahTextView.fontFeatureSettings = "'liga' on, 'clig' on"  // Forces ligature rendering
                         ayahBinding.ayahTextView.text = fixMissingSmallStops(remainingText)
                         // Set both tag formats for compatibility
                         ayahBinding.root.tag = "ayah_${ayah.surahNumber}_${ayah.ayahNumber}"
@@ -567,9 +560,7 @@ class QuranReaderFragment : Fragment() {
                     false
                 )
                 binding.ayahNumberTextView.text = ayah.ayahNumber.toString()
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    binding.ayahTextView.fontFeatureSettings = "'liga' on, 'clig' on"  // Forces ligature rendering
-                }
+                binding.ayahTextView.fontFeatureSettings = "'liga' on, 'clig' on"  // Forces ligature rendering
                 binding.ayahTextView.text = fixMissingSmallStops(ayah.text)
                 // Set both tag formats for compatibility
                 binding.root.tag = "ayah_${ayah.surahNumber}_${ayah.ayahNumber}"
