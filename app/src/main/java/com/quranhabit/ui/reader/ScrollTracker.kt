@@ -1,5 +1,6 @@
 package com.quranhabit.ui.reader
 
+import android.util.Log
 import androidx.core.widget.NestedScrollView
 
 class ScrollTracker {
@@ -11,12 +12,19 @@ class ScrollTracker {
     private var lastScrollY: Int = 0
 
     fun attach(view: NestedScrollView) {
+        Log.d("ScrollTracker", "Attaching to scroll view")
+
         scrollView = view
+        onScrollStateChanged?.invoke(false) // Initial state is not scrolling
+
         view.setOnScrollChangeListener(NestedScrollView.OnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
+            Log.d("ScrollTracker", "Scroll detected - Y: $scrollY, oldY: $oldScrollY")
+
             // Track scrolling state
             val newScrollingState = scrollY != oldScrollY
             if (newScrollingState != isScrolling) {
                 isScrolling = newScrollingState
+                Log.d("ScrollTracker", "Scroll state changed: $isScrolling")
                 onScrollStateChanged?.invoke(isScrolling)
             }
 
@@ -27,6 +35,7 @@ class ScrollTracker {
 
             if (newBottomState != isBottomReached) {
                 isBottomReached = newBottomState
+                Log.d("ScrollTracker", "Bottom state changed: $isBottomReached")
                 onScrollPositionChanged?.invoke(isBottomReached)
             }
         })
@@ -50,6 +59,6 @@ class ScrollTracker {
     }
     
     companion object {
-        private const val PIXELS_BUFFER = 16
+        const val PIXELS_BUFFER = 16
     }
 }

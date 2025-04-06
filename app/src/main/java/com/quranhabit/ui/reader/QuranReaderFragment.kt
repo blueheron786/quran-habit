@@ -197,7 +197,7 @@ class QuranReaderFragment : Fragment() {
                                         ?: scrollView.findViewWithTag<View?>("ayah_$ayah")
 
                                     ayahView?.let {
-                                        // Simple fixed backup for basmalah (adjust size as needed)
+                                        // Simple fixed backup for basmala (adjust size as needed)
                                         val backup = if (ayah == 1) {
                                             (70 * resources.displayMetrics.density).toInt() // Convert dp to pixels
                                         } else {
@@ -251,10 +251,17 @@ class QuranReaderFragment : Fragment() {
         binding.quranPager.layoutDirection = View.LAYOUT_DIRECTION_RTL
         binding.quranPager.setCurrentItem(initialPage, false)
 
+        binding.quranPager.post {
+            binding.quranPager.setCurrentItem(initialPage, false)
+            currentPagePosition = initialPage
+            updateHeader(getSurahForPage(initialPage).number, initialPage)
+        }
+
         binding.quranPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             private var scrollState = ViewPager2.SCROLL_STATE_IDLE
 
             override fun onPageSelected(newPage: Int) {
+                Log.d("PageFlow", "Page selected: $newPage")
                 saveCurrentPosition()
 
                 // 1. Pause and log time from previous page
@@ -304,6 +311,18 @@ class QuranReaderFragment : Fragment() {
                 }
             }
 
+            // Required for Mark As Read when you freshly open a new surah
+            override fun onPageScrollStateChanged(state: Int) {
+                val stateName = when(state) {
+                    ViewPager2.SCROLL_STATE_IDLE -> "IDLE"
+                    ViewPager2.SCROLL_STATE_DRAGGING -> "DRAGGING"
+                    ViewPager2.SCROLL_STATE_SETTLING -> "SETTLING"
+                    else -> "UNKNOWN"
+                }
+                Log.d("PageFlow", "Scroll state changed: $stateName")
+                super.onPageScrollStateChanged(state)
+            }
+
             private fun logReadingTime(secondsSpendReading: Int) {
                 val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
@@ -316,19 +335,21 @@ class QuranReaderFragment : Fragment() {
                     }
                 }
             }
-
-            override fun onPageScrollStateChanged(state: Int) {
-                scrollState = state
-                if (state == ViewPager2.SCROLL_STATE_IDLE) {
-                    // Only check conditions, don't mark yet
-                    Log.d("PageFlow", "Page settled - scroll: $pageScrollState, timer: ${pageTimer == null}")
-                }
-            }
         })
     }
 
     private fun checkPageReadConditions() {
-        Log.d("PageConditions", "Checking conditions - scroll:$pageScrollState, marked:$pageMarked, read:${pageReadStates.getOrDefault(currentPagePosition, false)}, bottom:$isAtBottom, timer:${pageTimer == null}, lastMarked:$lastPageMarkedAsRead, current:$currentPagePosition")
+        Log.d("PageConditions", """
+            Checking conditions:
+            - scroll: $pageScrollState
+            - marked: $pageMarked
+            - read: ${pageReadStates.getOrDefault(currentPagePosition, false)}
+            - bottom: $isAtBottom
+            - timer: ${pageTimer == null}
+            - lastMarked: $lastPageMarkedAsRead
+            - current: $currentPagePosition
+        """.trimIndent())
+
 
         // Only mark as read if we haven't already marked this page
         if (!pageMarked &&
@@ -400,24 +421,24 @@ class QuranReaderFragment : Fragment() {
         isAtBottom = atBottom
 
         if (atBottom) {
-            // Start fresh 1s timer only if not already running
-            if (bottomTimer == null) {
-                bottomTimer = object : CountDownTimer(1000L, 1000L) {
-                    override fun onTick(millisUntilFinished: Long) {}
-                    override fun onFinish() {
-                        if (isAtBottom) { // Double-check we're still at bottom
-                            checkPageReadConditions()
-                        }
-                        bottomTimer = null
-                    }
-                }.start()
-                Log.d("BottomTimer", "Started bottom timer")
+            // If we reach bottom and scroll is idle, check immediately
+            if (!pageScrollState) {
+                checkPageReadConditions()
             }
+            // Also start timer as fallback
+            bottomTimer?.cancel()
+            bottomTimer = object : CountDownTimer(1000L, 1000L) {
+                override fun onTick(millisUntilFinished: Long) {}
+                override fun onFinish() {
+                    if (isAtBottom) {
+                        checkPageReadConditions()
+                    }
+                    bottomTimer = null
+                }
+            }.start()
         } else {
-            // User scrolled up → CANCEL timer aggressively
             bottomTimer?.cancel()
             bottomTimer = null
-            Log.d("BottomTimer", "Cancelled bottom timer (user scrolled up)")
         }
     }
 
@@ -467,9 +488,29 @@ class QuranReaderFragment : Fragment() {
         private val scrollPositions = SparseArray<Int>()
         private val scrollTrackers = mutableMapOf<Int, ScrollTracker>()
 
-        inner class PageViewHolder(val binding: ItemPageBinding) :
-            RecyclerView.ViewHolder(binding.root) {
-            val scrollTracker = ScrollTracker() // Add this line
+        inner class PageViewHolder(val binding: ItemPageBinding) : RecyclerView.ViewHolder(binding.root) {
+            val scrollTracker = ScrollTracker().apply {
+                onScrollStateChanged = { isScrolling ->
+                    val pos = bindingAdapterPosition
+                    if (pos != RecyclerView.NO_POSITION) {  // Add this check
+                        Log.d("PageAdapter", "Scroll state for $pos: $isScrolling")
+                        if (pos == fragment.currentPagePosition) {
+                            fragment.pageScrollState = isScrolling
+                            fragment.checkPageReadConditions()
+                        }
+                    }
+                }
+
+                onScrollPositionChanged = { atBottom ->
+                    val pos = bindingAdapterPosition
+                    if (pos != RecyclerView.NO_POSITION) {  // Add this check
+                        Log.d("PageAdapter", "Bottom state for $pos: $atBottom")
+                        if (pos == fragment.currentPagePosition) {
+                            fragment.handleBottomPositionChange(atBottom)
+                        }
+                    }
+                }
+            }
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PageViewHolder {
@@ -481,22 +522,22 @@ class QuranReaderFragment : Fragment() {
             return PageViewHolder(binding)
         }
 
-        private fun getFirstLineNumberForSurah(surahNumber: Int): Int {
-            return allPages.flatten() // Flatten all pages' ayah ranges
-                .firstOrNull { it.surah == surahNumber } // Find first range for this surah
-                ?.start // Get its starting line number
-                ?: 0 // Default to 0 if not found (shouldn't happen)
-        }
-
         override fun onBindViewHolder(holder: PageViewHolder, position: Int) {
+            // Guard against invalid positions
+            if (position !in 0 until allPages.size) {
+                Log.e("PageAdapter", "Invalid position: $position")
+                return
+            }
+
             holder.binding.pageContent.removeAllViews()
 
             // Add each ayah to the page
             allPages[position].forEach { range ->
+                val firstLineForSurah = fragment.getFirstLineNumberForSurah(range.surah)
                 (range.start..range.end).forEach { lineNumber ->
                     val ayah = Ayah(
                         surahNumber = range.surah,
-                        ayahNumber = lineNumber - getFirstLineNumberForSurah(range.surah) + 1,
+                        ayahNumber = lineNumber - firstLineForSurah + 1,
                         text = quranLines[lineNumber - 1]
                     )
                     addAyahToView(holder.binding.pageContent, ayah)
@@ -504,17 +545,21 @@ class QuranReaderFragment : Fragment() {
             }
 
             // Setup scroll tracking
-            val scrollView = holder.binding.root.findViewById<NestedScrollView>(R.id.page_scroll_view)
+            val scrollView = holder.binding.pageScrollView
             holder.scrollTracker.attach(scrollView)
-            holder.scrollTracker.onScrollStateChanged = { isScrolled ->
-                if (position == fragment.currentPagePosition) {
-                    fragment.pageScrollState = isScrolled
-                    fragment.checkPageReadConditions()
-                }
-            }
-            holder.scrollTracker.onScrollPositionChanged = { atBottom ->
-                if (position == fragment.currentPagePosition) {
-                    fragment.handleBottomPositionChange(atBottom)
+
+            // Add this after setting up the scroll tracker:
+            if (position == fragment.binding.quranPager.currentItem) {
+                // Force initial scroll state update
+                holder.scrollTracker.onScrollStateChanged?.invoke(false)
+                // Force initial bottom check if already at bottom
+                scrollView.post {
+                    val contentHeight = scrollView.getChildAt(0)?.height ?: 0
+                    val visibleHeight = scrollView.height
+                    val atBottom = (scrollView.scrollY + visibleHeight) >= contentHeight - ScrollTracker.PIXELS_BUFFER
+                    if (atBottom) {
+                        fragment.handleBottomPositionChange(true)
+                    }
                 }
             }
         }
