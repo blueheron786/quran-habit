@@ -509,6 +509,26 @@ class QuranReaderFragment : Fragment() {
                         }
                     }
                 }
+
+                onScrollPositionSaved = { scrollY ->
+                    val pos = bindingAdapterPosition
+                    if (pos != RecyclerView.NO_POSITION) {
+                        fragment.lifecycleScope.launch {
+                            val page = pos
+                            val surah = fragment.getSurahForPage(page).number
+                            val ayahRanges = fragment.allPages[page]
+                            val lastAyahRange = ayahRanges.last()
+                            val lastAyahNumber = lastAyahRange.end - fragment.getFirstLineNumberForSurah(lastAyahRange.surah) + 1
+
+                            fragment.lastReadRepo.savePosition(
+                                surah = surah,
+                                ayah = lastAyahNumber,
+                                page = page,
+                                scrollY = scrollY
+                            )
+                        }
+                    }
+                }
             }
         }
 

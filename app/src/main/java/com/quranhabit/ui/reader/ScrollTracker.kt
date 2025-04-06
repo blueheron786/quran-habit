@@ -4,9 +4,12 @@ import android.util.Log
 import androidx.core.widget.NestedScrollView
 
 class ScrollTracker {
-    private var scrollView: NestedScrollView? = null
     var onScrollStateChanged: ((Boolean) -> Unit)? = null
     var onScrollPositionChanged: ((Boolean) -> Unit)? = null
+    var onScrollPositionSaved: ((Int) -> Unit)? = null
+
+    private var scrollView: NestedScrollView? = null
+
     private var isScrolling = false
     private var isBottomReached = false
     private var lastScrollY: Int = 0
@@ -15,6 +18,15 @@ class ScrollTracker {
         Log.d("ScrollTracker", "Attaching to scroll view")
 
         scrollView = view
+
+        // Restore scroll position if we have a saved one
+        if (lastScrollY > 0) {
+            Log.d("ScrollTracker", "Restoring scroll position to $lastScrollY")
+            view.post {
+                view.scrollTo(0, lastScrollY)
+            }
+        }
+
         onScrollStateChanged?.invoke(false) // Initial state is not scrolling
 
         view.setOnScrollChangeListener(NestedScrollView.OnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
@@ -26,6 +38,12 @@ class ScrollTracker {
                 isScrolling = newScrollingState
                 Log.d("ScrollTracker", "Scroll state changed: $isScrolling")
                 onScrollStateChanged?.invoke(isScrolling)
+            }
+
+            Log.d("ScrollTracker", "debugz: $newScrollingState and $isScrolling")
+            if (!newScrollingState && !isScrolling) {
+                saveScrollPosition()
+                Log.d("ScrollTracker", "SAVE POSITION!")
             }
 
             // Track bottom position
@@ -47,6 +65,8 @@ class ScrollTracker {
 
     private fun saveScrollPosition() {
         lastScrollY = scrollView?.scrollY ?: 0
+        onScrollPositionSaved?.invoke(lastScrollY)
+        Log.d("ScrollTracker", "Saved scroll position: $lastScrollY")
     }
 
     fun detach() {
@@ -57,7 +77,7 @@ class ScrollTracker {
         onScrollStateChanged = null
         onScrollPositionChanged = null  // Prevent stale callbacks
     }
-    
+
     companion object {
         const val PIXELS_BUFFER = 16
     }
