@@ -475,24 +475,6 @@ class QuranReaderFragment : Fragment() {
         override fun onBindViewHolder(holder: PageViewHolder, position: Int) {
             holder.binding.pageContent.removeAllViews()
 
-            allPages[position].forEach { range ->
-                (range.start..range.end).forEach { lineNumber ->
-                    val lineText = quranLines[lineNumber - 1]
-                    val firstLineForSurah = getFirstLineNumberForSurah(range.surah)
-                    val ayahNumber = lineNumber - firstLineForSurah + 1
-
-                    val ayah = Ayah(
-                        surahNumber = range.surah,
-                        ayahNumber = ayahNumber,
-                        text = lineText
-                    )
-
-                    addAyahToView(holder.binding.pageContent, ayah)
-                }
-            }
-
-            holder.binding.pageContent.removeAllViews()
-
             // Add each ayah to the page
             allPages[position].forEach { range ->
                 (range.start..range.end).forEach { lineNumber ->
