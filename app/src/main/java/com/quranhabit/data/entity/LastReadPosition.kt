@@ -8,7 +8,6 @@ data class LastReadPosition(
     @PrimaryKey val id: Int = 1, // Single row
     val surah: Int,
     val ayah: Int,
-    val page: Int,
     val scrollY: Int,
     val timestamp: Long
 )

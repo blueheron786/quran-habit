@@ -11,7 +11,7 @@ import com.quranhabit.data.entity.PagesReadOnDay
 
 @Database(
     entities = [PagesReadOnDay::class, LastReadPosition::class],
-    version = 4,
+    version = 6,
     exportSchema = false
 )
 abstract class QuranDatabase : RoomDatabase() {

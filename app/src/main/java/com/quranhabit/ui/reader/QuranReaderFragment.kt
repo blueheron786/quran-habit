@@ -166,31 +166,29 @@ class QuranReaderFragment : Fragment() {
 
     private fun scrollToAyah(surah: Int, ayah: Int) {
         try {
-            var pageToShow = arguments?.getInt("pageNumber") ?: 0
-            if (pageToShow == 0) {
-                pageToShow = findPageForAyah(surah, ayah).coerceIn(0, allPages.size - 1)
-            }
-            Log.d("SCROLL_DEBUG", "Reporting in to scrolToAyah; s=$surah, a=$ayah, page=${pageToShow}!")
+            Log.d("SCROLL_DEBUG", "Reporting in to scrolToAyah; s=$surah, a=$ayah!")
 
-            val targetPage = pageToShow
-
-            // Always change page if surah changed or page is different
-            if (binding.quranPager.currentItem != targetPage || surah != currentSurahNumber) {
-                binding.quranPager.setCurrentItem(targetPage, false)
-                currentSurahNumber = surah
-            }
+//            // Always change page if surah changed or page is different
+//            if (binding.quranPager.currentItem != targetPage || surah != currentSurahNumber) {
+//                binding.quranPager.setCurrentItem(targetPage, false)
+//                currentSurahNumber = surah
+//            }
 
             // Wait for the page to be rendered and the ViewHolder to be available
             binding.quranPager.post {
                 try {
-                    val recyclerView = binding.quranPager.getChildAt(0) as? RecyclerView
-                    val viewHolder = recyclerView?.findViewHolderForAdapterPosition(targetPage) as? QuranPageAdapter.PageViewHolder
+                    val currentRecyclerView = binding.quranPager.getChildAt(0) as? RecyclerView
+                    val viewHolder = currentRecyclerView?.findViewHolderForAdapterPosition(binding.quranPager.currentItem) as? QuranPageAdapter.PageViewHolder
                     val scrollView = viewHolder?.binding?.pageScrollView
+
+                    val ayahTag = "ayah_${surah}_${ayah}"
+                    val ayahView = scrollView?.findViewWithTag<View?>(ayahTag)
+                    Log.d("SCROLL_DEBUG", "Scrolling to AYAH $ayah in Surah $surah on page ${binding.quranPager.currentItem}. Got it? $ayahView")
 
                     lifecycleScope.launch {
                         val savedPosition = if (arguments?.containsKey("ayahNumber") == true) {
                             withContext(Dispatchers.IO) {
-                                lastReadRepo.getScrollPosition(targetPage) ?: 0
+                                lastReadRepo.getScrollPosition(surah, ayah) ?: 0
                             }
                         } else {
                             null
@@ -504,7 +502,6 @@ class QuranReaderFragment : Fragment() {
                             fragment.lastReadRepo.savePosition(
                                 surah = surah,
                                 ayah = lastAyahNumber,
-                                page = page,
                                 scrollY = scrollY
                             )
                         }
@@ -660,7 +657,7 @@ class QuranReaderFragment : Fragment() {
             ioScope.launch {
                 try {
                     // 1. Save last read position
-                    lastReadRepo.savePosition(surahNumber, ayahNumber, pageNumber, scrollY)
+                    lastReadRepo.savePosition(surahNumber, ayahNumber, scrollY)
 
                     // 2. Update statistics
                     val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
@@ -768,7 +765,6 @@ class QuranReaderFragment : Fragment() {
                 lastReadRepo.savePosition(
                     surah = surahNumber,
                     ayah = lastAyahNumber,
-                    page = currentPage,
                     scrollY = scrollY
                 )
             }
