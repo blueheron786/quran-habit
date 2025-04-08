@@ -167,29 +167,38 @@ class QuranReaderFragment : Fragment() {
 
     private fun scrollToAyah(surah: Int, ayah: Int) {
         try {
-            val targetPage = findPageForAyah(surah, ayah).coerceIn(0, allPages.size - 1)
+            var pageToShow = arguments?.getInt("pageNumber") ?: 0
+            Log.d("PAGE_WHO", "Initial is $pageToShow")
+            if (pageToShow == 0) {
+                pageToShow = findPageForAyah(surah, ayah).coerceIn(0, allPages.size - 1) // Corrected upper bound
+                Log.d("PAGE_WHO", "Null-updated to $pageToShow")
+            }
 
-            // Always change page if surah changed, even if same page number
+            val targetPage = pageToShow
+
+            // Always change page if surah changed or page is different
             if (binding.quranPager.currentItem != targetPage || surah != currentSurahNumber) {
                 binding.quranPager.setCurrentItem(targetPage, false)
                 currentSurahNumber = surah // Update current surah
             }
 
-            binding.quranPager.postDelayed({
+            // Wait for the page to be rendered and the ViewHolder to be available
+            binding.quranPager.post {
                 try {
                     val recyclerView = binding.quranPager.getChildAt(0) as? RecyclerView
-                    val viewHolder = recyclerView?.findViewHolderForAdapterPosition(targetPage)
-                    val scrollView = viewHolder?.itemView?.findViewById<NestedScrollView>(R.id.page_scroll_view)
+                    val viewHolder = recyclerView?.findViewHolderForAdapterPosition(targetPage) as? QuranPageAdapter.PageViewHolder
+                    val scrollView = viewHolder?.binding?.pageScrollView // Access scrollView via binding
 
                     lifecycleScope.launch {
-                        // Only use saved position if we're continuing reading
                         val savedPosition = if (arguments?.containsKey("ayahNumber") == true) {
-                            lastReadRepo.getScrollPosition(targetPage)
+                            withContext(Dispatchers.IO) { // Ensure DB access is on IO thread
+                                lastReadRepo.getScrollPosition(targetPage)
+                            }
                         } else {
                             null
                         }
 
-                        scrollView?.post {
+                        scrollView?.post { // Scroll on the UI thread after getting savedPosition
                             try {
                                 if (savedPosition != null) {
                                     scrollView.scrollTo(0, savedPosition)
@@ -198,17 +207,14 @@ class QuranReaderFragment : Fragment() {
                                         ?: scrollView.findViewWithTag<View?>("ayah_$ayah")
 
                                     ayahView?.let {
-                                        // Simple fixed backup for basmala (adjust size as needed)
                                         val backup = if (ayah == 1) {
-                                            (70 * resources.displayMetrics.density).toInt() // Convert dp to pixels
+                                            (70 * resources.displayMetrics.density).toInt()
                                         } else {
                                             0
                                         }
                                         val scrollPosition = max(0, it.top - backup)
                                         scrollView.smoothScrollTo(0, scrollPosition)
-                                    } ?: run {
-                                        scrollView.smoothScrollTo(0, 0)
-                                    }
+                                    } ?: scrollView.smoothScrollTo(0, 0)
                                 }
                             } catch (e: Exception) {
                                 scrollView.scrollTo(0, 0)
@@ -218,7 +224,7 @@ class QuranReaderFragment : Fragment() {
                 } catch (e: Exception) {
                     Log.e("QuranReader", "Page setup failed: ${e.message}")
                 }
-            }, 300) // Delay to allow page to settle
+            }
         } catch (e: Exception) {
             Log.e("QuranReader", "Scroll failed: ${e.message}")
             binding.quranPager.setCurrentItem(findFirstPageForSurah(surah), false)

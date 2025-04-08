@@ -2,6 +2,7 @@ package com.quranhabit.ui.reader
 
 import android.util.Log
 import androidx.core.widget.NestedScrollView
+import kotlin.math.abs
 
 class ScrollTracker {
     var onScrollStateChanged: ((Boolean) -> Unit)? = null
@@ -33,7 +34,7 @@ class ScrollTracker {
             Log.d("ScrollTracker", "Scroll detected - Y: $scrollY, oldY: $oldScrollY")
 
             // Track scrolling state
-            val newScrollingState = scrollY != oldScrollY
+            val newScrollingState = abs(scrollY - oldScrollY) < SCROLL_ERROR_MARGIN
             if (newScrollingState != isScrolling) {
                 isScrolling = newScrollingState
                 Log.d("ScrollTracker", "Scroll state changed: $isScrolling")
@@ -80,5 +81,6 @@ class ScrollTracker {
 
     companion object {
         const val PIXELS_BUFFER = 16
+        const val SCROLL_ERROR_MARGIN = 16 // Scrolled to 3106, then 3106 +- 16? It's a STOP yo. To save position.
     }
 }
