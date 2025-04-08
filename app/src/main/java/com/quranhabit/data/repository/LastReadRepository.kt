@@ -1,10 +1,12 @@
 package com.quranhabit.data.repository
 
+import android.util.Log
 import com.quranhabit.data.dao.LastReadPositionDao
 import com.quranhabit.data.entity.LastReadPosition
 
 class LastReadRepository(private val dao: LastReadPositionDao) {
     suspend fun savePosition(surah: Int, ayah: Int, scrollY: Int) {
+        Log.d("!!!!!!!!!!!!!", "s=$surah a=$ayah scr=$scrollY")
         dao.upsert(LastReadPosition(
             surah = surah,
             ayah = ayah,
