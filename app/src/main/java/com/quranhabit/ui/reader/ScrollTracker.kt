@@ -41,7 +41,6 @@ class ScrollTracker {
                 onScrollStateChanged?.invoke(isScrolling)
             }
 
-            Log.d("ScrollTracker", "debugz: $newScrollingState and $isScrolling")
             if (!newScrollingState && !isScrolling) {
                 saveScrollPosition()
                 Log.d("ScrollTracker", "SAVE POSITION!")

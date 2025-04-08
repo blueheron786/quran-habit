@@ -167,18 +167,17 @@ class QuranReaderFragment : Fragment() {
     private fun scrollToAyah(surah: Int, ayah: Int) {
         try {
             var pageToShow = arguments?.getInt("pageNumber") ?: 0
-            Log.d("PAGE_WHO", "Initial is $pageToShow")
             if (pageToShow == 0) {
-                pageToShow = findPageForAyah(surah, ayah).coerceIn(0, allPages.size - 1) // Corrected upper bound
-                Log.d("PAGE_WHO", "Null-updated to $pageToShow")
+                pageToShow = findPageForAyah(surah, ayah).coerceIn(0, allPages.size - 1)
             }
+            Log.d("SCROLL_DEBUG", "Reporting in to scrolToAyah; s=$surah, a=$ayah, page=${pageToShow}!")
 
             val targetPage = pageToShow
 
             // Always change page if surah changed or page is different
             if (binding.quranPager.currentItem != targetPage || surah != currentSurahNumber) {
                 binding.quranPager.setCurrentItem(targetPage, false)
-                currentSurahNumber = surah // Update current surah
+                currentSurahNumber = surah
             }
 
             // Wait for the page to be rendered and the ViewHolder to be available
@@ -186,24 +185,27 @@ class QuranReaderFragment : Fragment() {
                 try {
                     val recyclerView = binding.quranPager.getChildAt(0) as? RecyclerView
                     val viewHolder = recyclerView?.findViewHolderForAdapterPosition(targetPage) as? QuranPageAdapter.PageViewHolder
-                    val scrollView = viewHolder?.binding?.pageScrollView // Access scrollView via binding
+                    val scrollView = viewHolder?.binding?.pageScrollView
 
                     lifecycleScope.launch {
                         val savedPosition = if (arguments?.containsKey("ayahNumber") == true) {
-                            withContext(Dispatchers.IO) { // Ensure DB access is on IO thread
-                                lastReadRepo.getScrollPosition(targetPage)
+                            withContext(Dispatchers.IO) {
+                                lastReadRepo.getScrollPosition(targetPage) ?: 0
                             }
                         } else {
                             null
                         }
 
-                        scrollView?.post { // Scroll on the UI thread after getting savedPosition
+                        scrollView?.post {
                             try {
-                                if (savedPosition != null) {
+                                if (savedPosition != null && savedPosition > 0) {
+                                    Log.d("SCROLL_DEBUG", "Scrolling to saved pos $savedPosition")
                                     scrollView.scrollTo(0, savedPosition)
                                 } else {
-                                    val ayahView = scrollView.findViewWithTag<View?>("ayah_${surah}_$ayah")
-                                        ?: scrollView.findViewWithTag<View?>("ayah_$ayah")
+                                    val tag = "ayah_${surah}_$ayah"
+                                    Log.d("TAG_DEBUG", "looking for tag: $tag")
+                                    val ayahView = scrollView.findViewWithTag<View?>(tag)
+                                    Log.d("SCROLL_DEBUG", "Scrolling to AYAH $ayah. got it? $ayahView")
 
                                     ayahView?.let {
                                         val backup = if (ayah == 1) {
@@ -337,16 +339,6 @@ class QuranReaderFragment : Fragment() {
     }
 
     private fun checkPageReadConditions() {
-        Log.d("PageConditions", """
-            Checking conditions:
-            - marked: $pageMarked
-            - read: ${pageReadStates.getOrDefault(currentPagePosition, false)}
-            - bottom: $isAtBottom
-            - timer: ${pageTimer == null}
-            - lastMarked: $lastPageMarkedAsRead
-            - current: $currentPagePosition
-        """.trimIndent())
-
         // Only mark as read if we haven't already marked this page
         if (!pageMarked &&
             !pageReadStates.getOrDefault(currentPagePosition, false) &&
@@ -354,7 +346,6 @@ class QuranReaderFragment : Fragment() {
             pageTimer == null &&
             currentPagePosition != lastPageMarkedAsRead) {
 
-            Log.d("PageMark", "All conditions met for page $currentPagePosition")
             markPageAsRead(currentPagePosition)
             pageMarked = true
             pageReadStates[currentPagePosition] = true
@@ -504,6 +495,7 @@ class QuranReaderFragment : Fragment() {
                     if (pos != RecyclerView.NO_POSITION) {
                         fragment.lifecycleScope.launch {
                             val page = pos
+                            // page 114, ayah 1, whatchu gonna do? three matches...
                             val surah = fragment.getSurahForPage(page).number
                             val ayahRanges = fragment.allPages[page]
                             val lastAyahRange = ayahRanges.last()
@@ -593,6 +585,9 @@ class QuranReaderFragment : Fragment() {
         }
 
         private fun addAyahToView(container: ViewGroup, ayah: Ayah) {
+            val tag = "ayah_${ayah.surahNumber}_${ayah.ayahNumber}"
+            Log.d("TAG_DEBUG", "Setting tag: $tag for Ayah ${ayah.ayahNumber}")
+
             if (isBasmala(ayah)) {
                 // Existing basmala handling...
                 val basmalaView = LayoutInflater.from(container.context)
@@ -611,9 +606,7 @@ class QuranReaderFragment : Fragment() {
                         ayahBinding.ayahNumberTextView.text = ayah.ayahNumber.toString()
                         ayahBinding.ayahTextView.fontFeatureSettings = "'liga' on, 'clig' on"  // Forces ligature rendering
                         ayahBinding.ayahTextView.text = fixMissingSmallStops(remainingText)
-                        // Set both tag formats for compatibility
-                        ayahBinding.root.tag = "ayah_${ayah.surahNumber}_${ayah.ayahNumber}"
-                        ayahBinding.root.setTag(R.id.ayah_tag, "ayah_${ayah.ayahNumber}")
+                        ayahBinding.root.tag = tag
                         container.addView(ayahBinding.root)
                     }
             } else {
@@ -625,9 +618,7 @@ class QuranReaderFragment : Fragment() {
                 binding.ayahNumberTextView.text = ayah.ayahNumber.toString()
                 binding.ayahTextView.fontFeatureSettings = "'liga' on, 'clig' on"  // Forces ligature rendering
                 binding.ayahTextView.text = fixMissingSmallStops(ayah.text)
-                // Set both tag formats for compatibility
-                binding.root.tag = "ayah_${ayah.surahNumber}_${ayah.ayahNumber}"
-                binding.root.setTag(R.id.ayah_tag, "ayah_${ayah.ayahNumber}")
+                binding.root.tag = tag
                 container.addView(binding.root)
             }
         }
