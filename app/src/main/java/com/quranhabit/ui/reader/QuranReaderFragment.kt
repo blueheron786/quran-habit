@@ -70,7 +70,6 @@ class QuranReaderFragment : Fragment() {
     private lateinit var databaseHelper: DatabaseHelper
 
     // Checking if we read a page
-    private var pageScrollState = false
     private var pageTimer: CountDownTimer? = null
     private var currentPagePosition = -1
     private var pageReadStates = mutableMapOf<Int, Boolean>() // Track which pages have been marked as read
@@ -285,17 +284,11 @@ class QuranReaderFragment : Fragment() {
                 bottomTimer?.cancel()
                 bottomTimer = null
 
-                // Reset states
-                pageScrollState = false
-                pageMarked = false
-                isAtBottom = false
-
                 //// Page position etc
                 currentPagePosition = newPage
                 updateHeader(getSurahForPage(newPage).number, newPage)
 
                 // Reset states for new page
-                pageScrollState = false
                 pageMarked = false
 
                 // Cancel any existing timer
@@ -346,7 +339,6 @@ class QuranReaderFragment : Fragment() {
     private fun checkPageReadConditions() {
         Log.d("PageConditions", """
             Checking conditions:
-            - scroll: $pageScrollState
             - marked: $pageMarked
             - read: ${pageReadStates.getOrDefault(currentPagePosition, false)}
             - bottom: $isAtBottom
@@ -354,7 +346,6 @@ class QuranReaderFragment : Fragment() {
             - lastMarked: $lastPageMarkedAsRead
             - current: $currentPagePosition
         """.trimIndent())
-
 
         // Only mark as read if we haven't already marked this page
         if (!pageMarked &&
@@ -426,10 +417,6 @@ class QuranReaderFragment : Fragment() {
         isAtBottom = atBottom
 
         if (atBottom) {
-            // If we reach bottom and scroll is idle, check immediately
-            if (!pageScrollState) {
-                checkPageReadConditions()
-            }
             // Also start timer as fallback
             bottomTimer?.cancel()
             bottomTimer = object : CountDownTimer(1000L, 1000L) {
@@ -497,12 +484,8 @@ class QuranReaderFragment : Fragment() {
             val scrollTracker = ScrollTracker().apply {
                 onScrollStateChanged = { isScrolling ->
                     val pos = bindingAdapterPosition
-                    if (pos != RecyclerView.NO_POSITION) {  // Add this check
+                    if (pos != RecyclerView.NO_POSITION) {
                         Log.d("PageAdapter", "Scroll state for $pos: $isScrolling")
-                        if (pos == fragment.currentPagePosition) {
-                            fragment.pageScrollState = isScrolling
-                            fragment.checkPageReadConditions()
-                        }
                     }
                 }
 
