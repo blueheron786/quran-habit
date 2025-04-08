@@ -120,6 +120,9 @@ class QuranReaderFragment : Fragment() {
         // Get the selected surah number from arguments
         currentSurahNumber = arguments?.getInt("surahNumber") ?: 1
         val ayahNumber = arguments?.getInt("ayahNumber") ?: 1
+        val page = arguments?.getInt("pageNumber") ?: 1
+        val scrollY = arguments?.getInt("scrollY") ?: 1
+
 
         // Find the first page of the selected surah
         val initialPage = findFirstPageForSurah(currentSurahNumber)
@@ -135,7 +138,12 @@ class QuranReaderFragment : Fragment() {
         } else {
             // Only scroll to ayah if we're continuing from a saved position
             binding.quranPager.postDelayed({
-                scrollToAyah(currentSurahNumber, ayahNumber)
+                scrollToLastRead(
+                   currentSurahNumber,
+                   ayahNumber,
+                   page,
+                   scrollY
+                )
             }, 300)
         }
     }
@@ -161,6 +169,40 @@ class QuranReaderFragment : Fragment() {
                     ))
                 }
             }
+        }
+    }
+
+    private fun scrollToLastRead(surah: Int, ayah: Int, page: Int, scrollY: Int) {
+        try {
+            // Always change page if surah changed or page is different
+            if (binding.quranPager.currentItem != page) {
+                binding.quranPager.setCurrentItem(page, false)
+            }
+
+            // Wait for the page to be rendered and the ViewHolder to be available
+            binding.quranPager.post {
+                try {
+                    val recyclerView = binding.quranPager.getChildAt(0) as? RecyclerView
+                    val viewHolder =
+                        recyclerView?.findViewHolderForAdapterPosition(page) as? QuranPageAdapter.PageViewHolder
+                    val scrollView = viewHolder?.binding?.pageScrollView
+
+                    lifecycleScope.launch {
+                        scrollView?.post {
+                            try {
+                                Log.d("SCROLL_DEBUG", "Scrolling to saved pos")
+                                scrollView.scrollTo(0, scrollY)
+                            } catch (e: Exception) {
+                                scrollView.scrollTo(0, 0)
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("QuranReader", "(A1) Page setup failed: ${e.message}")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("QuranReader", "(B1) Page setup failed: ${e.message}")
         }
     }
 

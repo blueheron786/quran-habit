@@ -66,6 +66,7 @@ class MainActivity : AppCompatActivity() {
                         putInt("surahNumber", position.surah)
                         putInt("ayahNumber", position.ayah)
                         putInt("pageNumber", position.page)
+                        putInt("scrollY", position.scrollY)
                     }
 
                     supportFragmentManager.beginTransaction()
