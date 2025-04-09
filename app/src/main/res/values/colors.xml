@@ -10,5 +10,5 @@
     <color name="text_primary">#FFFFFF</color>
 
     <!-- other visual feedback -->
-    <color name="green">#00BB00</color>
+    <color name="visual_feedback">#348feb</color>
 </resources>
