@@ -10,7 +10,6 @@ class ReadingTimeTracker {
         if (isPaused || startTime == 0L) {
             startTime = System.currentTimeMillis()
             isPaused = false
-            Log.d("ReadingTime", "Timer STARTED at $startTime")
         }
     }
 
@@ -20,7 +19,6 @@ class ReadingTimeTracker {
             val elapsed = ((System.currentTimeMillis() - startTime) / 1000).toInt()
             totalSeconds += elapsed
             isPaused = true
-            Log.d("ReadingTime", "Timer PAUSED. Added $elapsed seconds. Total: $totalSeconds")
             return totalSeconds
         }
         return totalSeconds
@@ -42,7 +40,6 @@ class ReadingTimeTracker {
 
     @Synchronized
     fun reset() {
-        Log.d("ReadingTime", "Timer RESET. Was tracking: ${getTotalSeconds()} seconds")
         startTime = 0
         totalSeconds = 0
         isPaused = false

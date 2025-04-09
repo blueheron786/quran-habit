@@ -16,8 +16,6 @@ class ScrollTracker {
     private var lastScrollY: Int = 0
 
     fun attach(view: NestedScrollView) {
-        Log.d("ScrollTracker", "Attaching to scroll view")
-
         scrollView = view
 
         // Restore scroll position if we have a saved one
@@ -31,19 +29,16 @@ class ScrollTracker {
         onScrollStateChanged?.invoke(false) // Initial state is not scrolling
 
         view.setOnScrollChangeListener(NestedScrollView.OnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
-            Log.d("ScrollTracker", "Scroll detected - Y: $scrollY, oldY: $oldScrollY")
 
             // Track scrolling state
             val newScrollingState = abs(scrollY - oldScrollY) < SCROLL_ERROR_MARGIN
             if (newScrollingState != isScrolling) {
                 isScrolling = newScrollingState
-                Log.d("ScrollTracker", "Scroll state changed: $isScrolling")
                 onScrollStateChanged?.invoke(isScrolling)
             }
 
             if (!newScrollingState && !isScrolling) {
                 saveScrollPosition()
-                Log.d("ScrollTracker", "SAVE POSITION!")
             }
 
             // Track bottom position
@@ -68,7 +63,6 @@ class ScrollTracker {
     private fun saveScrollPosition() {
         lastScrollY = scrollView?.scrollY ?: 0
         onScrollPositionSaved?.invoke(lastScrollY)
-        Log.d("ScrollTracker", "Saved scroll position: $lastScrollY")
     }
 
     fun detach() {

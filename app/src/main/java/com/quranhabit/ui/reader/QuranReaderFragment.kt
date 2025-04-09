@@ -196,8 +196,6 @@ class QuranReaderFragment : Fragment() {
             if (pageToShow == 0) {
                 pageToShow = findPageForAyah(surah, ayah).coerceIn(0, allPages.size - 1)
             }
-            Log.d("SCROLL_DEBUG", "Reporting in to scrolToAyah; s=$surah, a=$ayah, page=${pageToShow}!")
-
             val targetPage = pageToShow
 
             // Always change page if surah changed or page is different
@@ -229,7 +227,7 @@ class QuranReaderFragment : Fragment() {
                                     scrollView.scrollTo(0, savedPosition)
                                 } else {
                                     val tag = "ayah_${surah}_$ayah"
-                                    Log.d("TAG_DEBUG", "looking for tag: $tag")
+                                    Log.d("SCROLL_DEBUG", "looking for tag: $tag")
                                     val ayahView = scrollView.findViewWithTag<View?>(tag)
                                     Log.d("SCROLL_DEBUG", "Scrolling to AYAH $ayah. got it? $ayahView")
 
@@ -266,8 +264,6 @@ class QuranReaderFragment : Fragment() {
                 if (range.surah == surah) {
                     val firstAyah = range.start - getFirstLineNumberForSurah(surah) + 1
                     val lastAyah = range.end - getFirstLineNumberForSurah(surah) + 1
-                    // Debug output:
-                    Log.d("AyahDebug", "Page ${allPages.indexOf(page)}: Ayahs $firstAyah-$lastAyah")
                     ayah in firstAyah..lastAyah
                 } else false
             }
@@ -293,7 +289,6 @@ class QuranReaderFragment : Fragment() {
 
         binding.quranPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(newPage: Int) {
-                Log.d("PageFlow", "Page selected: $newPage")
                 saveCurrentPosition()
 
                 // 1. Pause and log time from previous page
@@ -342,7 +337,6 @@ class QuranReaderFragment : Fragment() {
                     ViewPager2.SCROLL_STATE_SETTLING -> "SETTLING"
                     else -> "UNKNOWN"
                 }
-                Log.d("PageFlow", "Scroll state changed: $stateName")
                 super.onPageScrollStateChanged(state)
             }
 
@@ -503,7 +497,6 @@ class QuranReaderFragment : Fragment() {
                 onScrollStateChanged = { isScrolling ->
                     val pos = bindingAdapterPosition
                     if (pos != RecyclerView.NO_POSITION) {
-                        Log.d("PageAdapter", "Scroll state for $pos: $isScrolling")
                     }
                 }
 
@@ -613,7 +606,6 @@ class QuranReaderFragment : Fragment() {
 
         private fun addAyahToView(container: ViewGroup, ayah: Ayah) {
             val tag = "ayah_${ayah.surahNumber}_${ayah.ayahNumber}"
-            Log.d("TAG_DEBUG", "Setting tag: $tag for Ayah ${ayah.ayahNumber}")
 
             if (isBasmala(ayah)) {
                 val basmalaView = LayoutInflater.from(container.context)
