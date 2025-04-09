@@ -81,7 +81,7 @@ class BarChartView @JvmOverloads constructor(
 
     private val goalPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        color = ContextCompat.getColor(context, R.color.gold)
+        color = ContextCompat.getColor(context, R.color.text_primary)
         strokeWidth = 3f
     }
 
@@ -101,7 +101,7 @@ class BarChartView @JvmOverloads constructor(
 
     private val goalLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = ContextCompat.getColor(context, R.color.gold)
+        color = ContextCompat.getColor(context, R.color.text_primary)
         textSize = 32f
         textAlign = Paint.Align.RIGHT
     }

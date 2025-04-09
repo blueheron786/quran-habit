@@ -14,7 +14,7 @@
         <item name="android:textSize">26sp</item> <!-- Slightly smaller -->
         <item name="android:lineSpacingMultiplier">0.7</item> <!-- Tighter line spacing -->
         <item name="android:fontFamily">@font/mushaf</item>
-        <item name="android:textColor">@color/gold</item>
+        <item name="android:textColor">@color/text_primary</item>
         <item name="android:includeFontPadding">false</item> <!-- Crucial -->
         <item name="android:gravity">center</item>
     </style>
