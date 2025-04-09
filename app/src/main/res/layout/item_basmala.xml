@@ -13,6 +13,6 @@
     android:maxLines="1"
     android:padding="4dp"
     android:text="﷽"
-    android:textColor="@color/gold"
+    android:textColor="@color/text_primary"
     android:textDirection="rtl"
     android:textSize="60sp" />
