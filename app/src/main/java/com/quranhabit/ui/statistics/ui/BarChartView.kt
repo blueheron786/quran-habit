@@ -83,6 +83,7 @@ class BarChartView @JvmOverloads constructor(
         style = Paint.Style.STROKE
         color = ContextCompat.getColor(context, R.color.text_primary)
         strokeWidth = 3f
+        pathEffect = DashPathEffect(floatArrayOf(10f, 10f), 0f) // 10f is dash length, 10f is gap length
     }
 
     private val axisPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
