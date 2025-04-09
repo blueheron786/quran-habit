@@ -48,7 +48,7 @@
             android:layout_width="match_parent"
             android:layout_height="300dp"
             android:layout_margin="16dp"
-            android:background="@color/background_blue"/>
+            android:background="@color/background_colour"/>
 
         <TextView
             android:layout_width="wrap_content"
@@ -79,7 +79,7 @@
             android:layout_width="match_parent"
             android:layout_height="300dp"
             android:layout_margin="16dp"
-            android:background="@color/background_blue"/>
+            android:background="@color/background_colour"/>
 
         <Button
             android:id="@+id/resetButton"

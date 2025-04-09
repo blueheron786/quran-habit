@@ -2,13 +2,12 @@
 <resources>
     <!-- Primary Theme Colors -->
     <color name="primary">#0066CC</color>
+    <!-- Background Colors -->
+    <color name="background_colour_lighter">#002244</color>
+    <color name="background_colour">#00091E</color>
 
     <!-- Text Colors -->
     <color name="text_primary">#FFFFFF</color>
-
-    <!-- Background Colors -->
-    <color name="background_blue">#00001E</color>
-    <color name="background_blue_lighter">#000044</color>
 
     <!-- other visual feedback -->
     <color name="green">#00BB00</color>
