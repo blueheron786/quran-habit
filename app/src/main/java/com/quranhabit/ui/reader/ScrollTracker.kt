@@ -59,6 +59,8 @@ class ScrollTracker {
         })
     }
 
+    fun isBottomReached(): Boolean = isBottomReached
+
     fun getScrollY(): Int {
         return scrollView?.scrollY ?: 0
     }

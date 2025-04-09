@@ -338,11 +338,6 @@ class QuranReaderFragment : Fragment() {
                 // Cancel any existing timer
                 pageTimer?.cancel()
 
-                // Start new timer if not already marked
-                if (!pageReadStates.getOrDefault(newPage, false)) {
-                    startPageReadTimer(newPage)
-                }
-
                 // page/timer stuff
                 currentPagePosition = newPage
                 updateHeader(getSurahForPage(newPage).number, newPage)
@@ -351,6 +346,8 @@ class QuranReaderFragment : Fragment() {
                 if (!pageReadStates.getOrDefault(newPage, false)) {
                     startPageReadTimer(newPage)
                 }
+
+                isAtBottom = false
             }
 
             // Required for Mark As Read when you freshly open a new surah
@@ -381,17 +378,21 @@ class QuranReaderFragment : Fragment() {
     }
 
     private fun checkPageReadConditions() {
-        // Only mark as read if we haven't already marked this page
+        // Get current scroll state from the ViewHolder
+        val recyclerView = binding.quranPager.getChildAt(0) as? RecyclerView
+        val viewHolder = recyclerView?.findViewHolderForAdapterPosition(currentPagePosition) as? QuranPageAdapter.PageViewHolder
+        val isReallyAtBottom = viewHolder?.scrollTracker?.isBottomReached() ?: false
+
         if (!pageMarked &&
             !pageReadStates.getOrDefault(currentPagePosition, false) &&
-            isAtBottom &&
+            isReallyAtBottom &&
             pageTimer == null &&
             currentPagePosition != lastPageMarkedAsRead) {
 
             markPageAsRead(currentPagePosition)
             pageMarked = true
             pageReadStates[currentPagePosition] = true
-            lastPageMarkedAsRead = currentPagePosition // Update last marked page
+            lastPageMarkedAsRead = currentPagePosition
         }
     }
 
