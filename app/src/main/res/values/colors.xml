@@ -9,7 +9,7 @@
 
     <!-- Background Colors -->
     <color name="background_blue">#00001E</color>
-    <color name="background_darkblue">#000044</color>
+    <color name="background_blue_lighter">#000044</color>
 
     <!-- other visual feedback -->
     <color name="green">#00BB00</color>

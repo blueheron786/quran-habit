@@ -5,7 +5,6 @@ import android.content.Context
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.util.Log
-import android.util.SparseArray
 import android.util.SparseIntArray
 import android.view.LayoutInflater
 import android.view.View
@@ -14,7 +13,6 @@ import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
@@ -138,12 +136,7 @@ class QuranReaderFragment : Fragment() {
         } else {
             // Only scroll to ayah if we're continuing from a saved position
             binding.quranPager.postDelayed({
-                scrollToLastRead(
-                   currentSurahNumber,
-                   ayahNumber,
-                   page,
-                   scrollY
-                )
+                scrollToLastRead(currentSurahNumber, ayahNumber)
             }, 300)
         }
     }
@@ -172,7 +165,7 @@ class QuranReaderFragment : Fragment() {
         }
     }
 
-    private fun scrollToLastRead(surah: Int, ayah: Int, page: Int, scrollY: Int) {
+    private fun scrollToLastRead(page: Int, scrollY: Int) {
         try {
             // Always change page if surah changed or page is different
             if (binding.quranPager.currentItem != page) {
