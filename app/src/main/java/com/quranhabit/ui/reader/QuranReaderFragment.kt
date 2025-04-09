@@ -118,28 +118,29 @@ class QuranReaderFragment : Fragment() {
 
         // Get the selected surah number from arguments
         currentSurahNumber = arguments?.getInt("surahNumber") ?: 1
-        val ayahNumber = arguments?.getInt("ayahNumber") ?: 1
-        val page = arguments?.getInt("pageNumber") ?: 1
-        val scrollY = arguments?.getInt("scrollY") ?: 1
-
-
-        // Find the first page of the selected surah
-        val initialPage = findFirstPageForSurah(currentSurahNumber)
-
-        setupViewPager(initialPage)
-        updateHeader(currentSurahNumber, initialPage)
-
-        // Always scroll to first ayah unless we're continuing from a saved position
-        if (arguments?.containsKey("ayahNumber") != true) {
-            binding.quranPager.postDelayed({
-                scrollToAyah(currentSurahNumber, 1) // Always start at ayah 1 for new surah
-            }, 300)
-        } else {
-            // Only scroll to ayah if we're continuing from a saved position
-            binding.quranPager.postDelayed({
-                scrollToLastRead(currentSurahNumber, ayahNumber)
-            }, 300)
+        var ayahNumber = arguments?.getInt("ayahNumber") ?: 1
+        if (ayahNumber == 0)
+        {
+            ayahNumber = 1
         }
+
+        var page = arguments?.getInt("pageNumber") ?: 0
+        if (page == 0) {
+            page = findFirstPageForSurah(currentSurahNumber);
+        }
+
+        val scrollY = arguments?.getInt("scrollY") ?: 0
+
+        setupViewPager(page)
+        updateHeader(currentSurahNumber, page)
+
+        binding.quranPager.postDelayed({
+            if (scrollY > 0) {
+                scrollToLastRead(page, scrollY)
+            } else {
+                scrollToAyah(currentSurahNumber, ayahNumber)
+            }
+        }, 300)
     }
 
     private fun logReadingTime(seconds: Int) {
@@ -168,35 +169,32 @@ class QuranReaderFragment : Fragment() {
 
     private fun scrollToLastRead(page: Int, scrollY: Int) {
         try {
-            // Always change page if surah changed or page is different
+            // Always change page if different
             if (binding.quranPager.currentItem != page) {
                 binding.quranPager.setCurrentItem(page, false)
             }
 
-            // Wait for the page to be rendered and the ViewHolder to be available
             binding.quranPager.post {
                 try {
                     val recyclerView = binding.quranPager.getChildAt(0) as? RecyclerView
-                    val viewHolder =
-                        recyclerView?.findViewHolderForAdapterPosition(page) as? QuranPageAdapter.PageViewHolder
+                    val viewHolder = recyclerView?.findViewHolderForAdapterPosition(page) as? QuranPageAdapter.PageViewHolder
                     val scrollView = viewHolder?.binding?.pageScrollView
 
-                    lifecycleScope.launch {
-                        scrollView?.post {
-                            try {
-                                Log.d("SCROLL_DEBUG", "Scrolling to saved pos")
-                                scrollView.scrollTo(0, scrollY)
-                            } catch (e: Exception) {
-                                scrollView.scrollTo(0, 0)
-                            }
+                    scrollView?.post {
+                        try {
+                            Log.d("SCROLL_DEBUG", "Scrolling to saved pos $scrollY")
+                            scrollView.scrollTo(0, scrollY)
+                        } catch (e: Exception) {
+                            Log.e("ScrollError", "Failed to scroll", e)
+                            scrollView.scrollTo(0, 0)
                         }
                     }
                 } catch (e: Exception) {
-                    Log.e("QuranReader", "(A1) Page setup failed: ${e.message}")
+                    Log.e("QuranReader", "Page setup failed", e)
                 }
             }
         } catch (e: Exception) {
-            Log.e("QuranReader", "(B1) Page setup failed: ${e.message}")
+            Log.e("QuranReader", "Scroll failed", e)
         }
     }
 
