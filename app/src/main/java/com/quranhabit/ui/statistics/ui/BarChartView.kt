@@ -76,7 +76,7 @@ class BarChartView @JvmOverloads constructor(
     // Paints
     private val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = ContextCompat.getColor(context, R.color.primary)
+        color = ContextCompat.getColor(context, R.color.accent)
     }
 
     private val goalPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
