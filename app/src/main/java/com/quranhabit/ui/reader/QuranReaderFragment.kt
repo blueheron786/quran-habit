@@ -83,6 +83,7 @@ class QuranReaderFragment : Fragment() {
     companion object {
         private const val PAGE_READ_DELAY_MS = 3000L
         private const val PAGE_READ_CHECK_INTERVAL = 1000L
+        private const val BASMALA_HEADER_HEIGHT = 111 // scroll up to show it properly
     }
 
     private val cachedPages by lazy {
@@ -244,7 +245,7 @@ class QuranReaderFragment : Fragment() {
 
                                     ayahView?.let {
                                         val backup = if (ayah == 1) {
-                                            (70 * resources.displayMetrics.density).toInt()
+                                            (BASMALA_HEADER_HEIGHT * resources.displayMetrics.density).toInt()
                                         } else {
                                             0
                                         }
@@ -494,7 +495,7 @@ class QuranReaderFragment : Fragment() {
 
     private fun showPageReadFeedback() {
         val snack = Snackbar.make(binding.root, "✔ Page read", Snackbar.LENGTH_SHORT)
-        snack.setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.green))
+        snack.setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.visual_feedback))
         snack.show()
     }
 
@@ -625,7 +626,6 @@ class QuranReaderFragment : Fragment() {
             Log.d("TAG_DEBUG", "Setting tag: $tag for Ayah ${ayah.ayahNumber}")
 
             if (isBasmala(ayah)) {
-                // Existing basmala handling...
                 val basmalaView = LayoutInflater.from(container.context)
                     .inflate(R.layout.item_basmala, container, false) as TextView
                 container.addView(basmalaView)
