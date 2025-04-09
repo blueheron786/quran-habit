@@ -15,7 +15,6 @@
         <item name="android:lineSpacingMultiplier">0.7</item> <!-- Tighter line spacing -->
         <item name="android:fontFamily">@font/mushaf</item>
         <item name="android:textColor">@color/gold</item>
-        <item name="android:background">@drawable/basmala_background</item>
         <item name="android:includeFontPadding">false</item> <!-- Crucial -->
         <item name="android:gravity">center</item>
     </style>
