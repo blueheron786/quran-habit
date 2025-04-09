@@ -118,17 +118,9 @@ class QuranReaderFragment : Fragment() {
 
         // Get the selected surah number from arguments
         currentSurahNumber = arguments?.getInt("surahNumber") ?: 1
-        var ayahNumber = arguments?.getInt("ayahNumber") ?: 1
-        if (ayahNumber == 0)
-        {
-            ayahNumber = 1
-        }
-
-        var page = arguments?.getInt("pageNumber") ?: 0
-        if (page == 0) {
-            page = findFirstPageForSurah(currentSurahNumber);
-        }
-
+        // Argument missing -> defaults to zero, but we want 1 instead
+        val ayahNumber = arguments?.getInt("ayahNumber")?.takeIf { it != 0 } ?: 1
+        val page = arguments?.getInt("pageNumber")?.takeIf { it != 0 } ?: findFirstPageForSurah(currentSurahNumber)
         val scrollY = arguments?.getInt("scrollY") ?: 0
 
         setupViewPager(page)
