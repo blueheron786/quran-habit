@@ -6,7 +6,7 @@
     android:orientation="horizontal"
     android:gravity="center_vertical"
     android:layoutDirection="ltr"
-    android:background="@color/background_colour_lighter">
+    android:background="@color/primary">
 
     <!-- Surah Number (Leftmost) -->
     <TextView

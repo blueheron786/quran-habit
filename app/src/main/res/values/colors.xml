@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Primary Theme Colors -->
-    <color name="primary">#0066CC</color>
+    <color name="accent">#0066CC</color>
     <!-- Background Colors -->
-    <color name="background_colour_lighter">#002244</color>
-    <color name="background_colour">#00091E</color>
+    <color name="primary">#002244</color>
+    <color name="primary_dark">#00091E</color>
 
     <!-- Text Colors -->
     <color name="text_primary">#FFFFFF</color>

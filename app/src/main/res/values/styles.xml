@@ -2,8 +2,8 @@
     <!-- Base application theme -->
     <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Primary brand color -->
-        <item name="colorPrimary">@color/primary</item>
-        <item name="colorPrimaryVariant">@color/primary</item>
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorPrimaryVariant">@color/accent</item>
         <item name="colorOnPrimary">@color/text_primary</item>
 
         <!-- Bottom Navigation styling -->
@@ -23,7 +23,7 @@
     <style name="MyBottomNavigationStyle" parent="Widget.MaterialComponents.BottomNavigationView">
         <item name="itemIconTint">@color/text_primary</item>
         <item name="itemTextColor">@color/text_primary</item>
-        <item name="android:background">@color/background_colour</item>
+        <item name="android:background">@color/primary_dark</item>
         <item name="android:elevation">8dp</item>
     </style>
 </resources>
