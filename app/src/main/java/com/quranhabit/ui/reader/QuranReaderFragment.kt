@@ -479,7 +479,8 @@ class QuranReaderFragment : Fragment() {
 
     private fun showPageReadFeedback() {
         val snack = Snackbar.make(binding.root, "✔ Page read", Snackbar.LENGTH_SHORT)
-        snack.setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.visual_feedback))
+        snack.setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.accent))
+        snack.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary))
         snack.show()
     }
 
