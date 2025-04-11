@@ -161,7 +161,6 @@ class QuranReaderFragment : Fragment() {
 
     private fun scrollToLastRead(page: Int, scrollY: Int) {
         try {
-            // Always change page if different
             if (binding.quranPager.currentItem != page) {
                 binding.quranPager.setCurrentItem(page, false)
             }
@@ -175,7 +174,13 @@ class QuranReaderFragment : Fragment() {
                     scrollView?.post {
                         try {
                             Log.d("SCROLL_DEBUG", "Scrolling to saved pos $scrollY")
+                            // Prevent marking as read during restoration
+                            viewHolder.scrollTracker?.isProgrammaticScroll = true
                             scrollView.scrollTo(0, scrollY)
+                            // Reset the flag after a delay
+                            scrollView.postDelayed({
+                                viewHolder.scrollTracker?.isProgrammaticScroll = false
+                            }, 500)
                         } catch (e: Exception) {
                             Log.e("ScrollError", "Failed to scroll", e)
                             scrollView.scrollTo(0, 0)
@@ -522,6 +527,7 @@ class QuranReaderFragment : Fragment() {
                             val lastAyahRange = ayahRanges.last()
                             val lastAyahNumber = lastAyahRange.end - fragment.getFirstLineNumberForSurah(lastAyahRange.surah) + 1
 
+                            Log.i("BUG_PRIME", "B: Saving last-read position: s=$surah a=$lastAyahNumber p=$page scroll=$scrollY ")
                             fragment.lastReadRepo.savePosition(
                                 surah = surah,
                                 ayah = lastAyahNumber,
@@ -679,6 +685,7 @@ class QuranReaderFragment : Fragment() {
             ioScope.launch {
                 try {
                     // 1. Save last read position
+                    Log.i("BUG_PRIME", "A: Saving last-read position: s=$surahNumber a=$ayahNumber p=$pageNumber scroll=$scrollY ")
                     lastReadRepo.savePosition(surahNumber, ayahNumber, pageNumber, scrollY)
 
                     // 2. Update statistics

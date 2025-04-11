@@ -5,6 +5,8 @@ import androidx.core.widget.NestedScrollView
 import kotlin.math.abs
 
 class ScrollTracker {
+    var isProgrammaticScroll: Boolean = false
+
     var onScrollStateChanged: ((Boolean) -> Unit)? = null
     var onScrollPositionChanged: ((Boolean) -> Unit)? = null
     var onScrollPositionSaved: ((Int) -> Unit)? = null
@@ -29,6 +31,8 @@ class ScrollTracker {
         onScrollStateChanged?.invoke(false) // Initial state is not scrolling
 
         view.setOnScrollChangeListener(NestedScrollView.OnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
+            // Skip tracking if this is a programmatic scroll
+            if (isProgrammaticScroll) return@OnScrollChangeListener
 
             // Track scrolling state
             val newScrollingState = abs(scrollY - oldScrollY) < SCROLL_ERROR_MARGIN
@@ -41,7 +45,7 @@ class ScrollTracker {
                 saveScrollPosition()
             }
 
-            // Track bottom position
+            // Track bottom position only if not programmatic scroll
             val contentHeight = scrollView?.getChildAt(0)?.height ?: 0
             val visibleHeight = scrollView?.height ?: 0
             val newBottomState = (scrollY + visibleHeight) >= contentHeight - PIXELS_BUFFER
