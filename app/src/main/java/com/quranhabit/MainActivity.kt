@@ -67,6 +67,7 @@ class MainActivity : AppCompatActivity() {
                         putInt("ayahNumber", position.ayah)
                         putInt("pageNumber", position.page)
                         putInt("scrollY", position.scrollY)
+                        putBoolean("fromContinue", true)
                     }
 
                     supportFragmentManager.beginTransaction()

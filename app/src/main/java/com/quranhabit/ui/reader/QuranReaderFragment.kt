@@ -127,9 +127,13 @@ class QuranReaderFragment : Fragment() {
         updateHeader(currentSurahNumber, page)
 
         binding.quranPager.postDelayed({
-            if (scrollY > 0) {
+            val fromContinue = arguments?.getBoolean("fromContinue") == true
+
+            if (fromContinue) {
+                // Always restore exact scrollY — even if 0
                 scrollToLastRead(page, scrollY)
             } else {
+                // New session → scroll to ayah
                 scrollToAyah(currentSurahNumber, ayahNumber)
             }
         }, 300)
@@ -243,6 +247,7 @@ class QuranReaderFragment : Fragment() {
                                             0
                                         }
                                         val scrollPosition = max(0, it.top - backup)
+
                                         scrollView.smoothScrollTo(0, scrollPosition)
                                     } ?: scrollView.smoothScrollTo(0, 0)
                                 }
@@ -527,7 +532,6 @@ class QuranReaderFragment : Fragment() {
                             val lastAyahRange = ayahRanges.last()
                             val lastAyahNumber = lastAyahRange.end - fragment.getFirstLineNumberForSurah(lastAyahRange.surah) + 1
 
-                            Log.i("BUG_PRIME", "B: Saving last-read position: s=$surah a=$lastAyahNumber p=$page scroll=$scrollY ")
                             fragment.lastReadRepo.savePosition(
                                 surah = surah,
                                 ayah = lastAyahNumber,
@@ -685,7 +689,6 @@ class QuranReaderFragment : Fragment() {
             ioScope.launch {
                 try {
                     // 1. Save last read position
-                    Log.i("BUG_PRIME", "A: Saving last-read position: s=$surahNumber a=$ayahNumber p=$pageNumber scroll=$scrollY ")
                     lastReadRepo.savePosition(surahNumber, ayahNumber, pageNumber, scrollY)
 
                     // 2. Update statistics
