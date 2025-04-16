@@ -1,3 +1,3 @@
 # Qur'an Habit
 
-Android app to track/encourage reading the Qur'an daily, in terms of pages per day.
+Qur'an Habit helps you track pages read and time spent each day. See your progress with clear graphs and stay consistent toward your monthly goal. No ads, no notifications, no distractions—just your and the book of Allah.
