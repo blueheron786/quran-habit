@@ -16,7 +16,7 @@ def convert_to_absolute(pages_path, output_path, quran_src_path, quran_text_path
     # is big trouble. Can't see it unless you add a waw or alif...
     replace_these = [
         ["و۟", "و"], ["ا۟", "ا"],
-    ] + letters_with_sukoon
+    ]
 
     with open(quran_src_path, 'r', encoding='utf-8') as f:
         quran_lines = f.read()
@@ -26,8 +26,6 @@ def convert_to_absolute(pages_path, output_path, quran_src_path, quran_text_path
 
     with open(quran_text_path, 'w', encoding='utf-8') as f:
         quran_lines = f.write(quran_lines)
-    #
-    ###
 
     # Load the Quran text to count total lines
     with open(quran_text_path, 'r', encoding='utf-8') as f:
@@ -81,6 +79,6 @@ def convert_to_absolute(pages_path, output_path, quran_src_path, quran_text_path
 convert_to_absolute(
     pages_path='pages.json',
     output_path='pages_absolute.json',
-    quran_src_path='/tmp/quran-uthmani.txt',
+    quran_src_path='D:\\temp\\quran-uthmani.txt',
     quran_text_path='quran_text.txt',
 )
