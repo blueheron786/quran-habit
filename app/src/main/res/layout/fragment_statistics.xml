@@ -43,6 +43,14 @@
             android:layout_marginStart="16dp"
             android:textSize="18sp"/>
 
+        <TextView
+            android:id="@+id/streakDays"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_primary"
+            android:layout_marginStart="16dp"
+            android:textSize="18sp"/>
+
         <com.quranhabit.ui.statistics.ui.BarChartView
             android:id="@+id/monthlyPagesChart"
             android:layout_width="match_parent"

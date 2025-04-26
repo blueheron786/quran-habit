@@ -21,6 +21,9 @@ class StatisticsViewModel(private val statisticsDao: StatisticsDao) : ViewModel(
     private val _totalPagesRead = MutableLiveData<Int>()
     val totalPagesRead: LiveData<Int> = _totalPagesRead
 
+    private val _streakDays = MutableLiveData<Int>();
+    val streakDays: LiveData<Int> = _streakDays;
+
     private val _timeReadToday = MutableLiveData<Int>()
     val timeReadToday: LiveData<Int> = _timeReadToday
 
@@ -58,6 +61,10 @@ class StatisticsViewModel(private val statisticsDao: StatisticsDao) : ViewModel(
                 statisticsDao.getTotalPagesRead()
             }
 
+            val streakDays = withContext(Dispatchers.IO) {
+                statisticsDao.getCurrentStreakDays()
+            }
+
             val totalTimeRead = withContext(Dispatchers.IO) {
                 statisticsDao.getTotalTimeRead()
             }
@@ -66,6 +73,7 @@ class StatisticsViewModel(private val statisticsDao: StatisticsDao) : ViewModel(
             _pagesReadMonth.value = dataForMonth.sumOf { it.pagesRead }
             _timeReadToday.value = dataForToday?.secondsSpendReading ?: 0
             _totalPagesRead.value = totalPagesRead
+            _streakDays.value = streakDays
             _totalTimeRead.value = totalTimeRead
 
             // Graph data
@@ -81,6 +89,7 @@ class StatisticsViewModel(private val statisticsDao: StatisticsDao) : ViewModel(
             _totalPagesRead.value = 0
             _timeReadToday.value = 0
             _totalTimeRead.value = 0
+            _streakDays.value = 0
             _pagesReadMonth.value = 0
             _monthlyData.value = emptyList()
             _weeklyTimeData.value = emptyList() // Reset weekly time data

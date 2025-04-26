@@ -42,6 +42,31 @@ interface StatisticsDao {
     ORDER BY date ASC
 """)
     suspend fun getTimeRangeStatsData(daysParam: Int): List<DailyData>
+
+    @Query("""
+    WITH RECURSIVE streak_days AS (
+        -- Base case: today's reading if it meets the criteria
+        SELECT date, 
+               CASE WHEN pagesRead >= 1 OR secondsSpendReading >= 60 THEN 1 ELSE 0 END AS hasRead,
+               1 AS dayNumber
+        FROM pages_read_on_day
+        WHERE date = strftime('%Y-%m-%d', 'now')
+        
+        UNION ALL
+        
+        -- Recursive case: previous days in the streak
+        SELECT p.date, 
+               CASE WHEN p.pagesRead >= 1 OR p.secondsSpendReading >= 60 THEN 1 ELSE 0 END AS hasRead,
+               sd.dayNumber + 1
+        FROM pages_read_on_day p
+        JOIN streak_days sd ON p.date = strftime('%Y-%m-%d', date(sd.date, '-1 day'))
+        WHERE sd.hasRead = 1
+    )
+    SELECT MAX(dayNumber) 
+    FROM streak_days 
+    WHERE hasRead = 1
+""")
+    suspend fun getCurrentStreakDays(): Int
 }
 
 

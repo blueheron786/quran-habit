@@ -77,6 +77,10 @@ class StatisticsFragment : Fragment() {
             val displayMinutes = minutes % 60
             binding.totalTime.text = getString(R.string.total_time, hours, displayMinutes)
         }
+
+        viewModel.streakDays.observe(viewLifecycleOwner) { days ->
+            binding.streakDays.text = getString(R.string.streak_days, days)
+        }
     }
 
     private fun observeBarChartData() {
