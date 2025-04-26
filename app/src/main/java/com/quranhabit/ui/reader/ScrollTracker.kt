@@ -14,7 +14,6 @@ class ScrollTracker {
     private var scrollView: NestedScrollView? = null
 
     private var isScrolling = false
-    private var isBottomReached = false
     private var lastScrollY: Int = 0
 
     fun attach(view: NestedScrollView) {
@@ -58,7 +57,24 @@ class ScrollTracker {
         })
     }
 
-    fun isBottomReached(): Boolean = isBottomReached
+    private var isBottomReached = false
+        set(value) {
+            if (field != value) {
+                field = value
+                Log.d("ScrollTracker", "Bottom state changed: $value")
+                onScrollPositionChanged?.invoke(value)
+            }
+        }
+
+    fun isBottomReached(): Boolean {
+        scrollView?.let {
+            val contentHeight = it.getChildAt(0)?.height ?: 0
+            val visibleHeight = it.height
+            val scrollY = it.scrollY
+            return (scrollY + visibleHeight) >= contentHeight - PIXELS_BUFFER
+        }
+        return false
+    }
 
     fun getScrollY(): Int {
         return scrollView?.scrollY ?: 0

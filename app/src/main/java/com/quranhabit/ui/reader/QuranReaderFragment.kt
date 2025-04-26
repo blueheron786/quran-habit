@@ -139,7 +139,7 @@ class QuranReaderFragment : Fragment() {
     private fun logReadingTime(seconds: Int) {
         if (seconds <= 0) return
 
-        val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(LocalDate.now())
+        val currentDate = LocalDate.now().toString()
         Log.d("ReadingTime", "Logging $seconds seconds for $currentDate")
 
         lifecycleScope.launch {
@@ -308,32 +308,26 @@ class QuranReaderFragment : Fragment() {
                 readingTimeTracker.reset()
                 readingTimeTracker.start()
 
-                // CANCEL ALL TIMERS on page change
+                // Cancel any existing timers on page change
                 pageTimer?.cancel()
                 pageTimer = null
                 bottomTimer?.cancel()
                 bottomTimer = null
 
-                //// Page position etc
+                // Update page position and header
                 currentPagePosition = newPage
                 updateHeader(getSurahForPage(newPage).number, newPage)
 
                 // Reset states for new page
                 pageMarked = false
-
-                // Cancel any existing timer
-                pageTimer?.cancel()
-
-                // page/timer stuff
-                currentPagePosition = newPage
-                updateHeader(getSurahForPage(newPage).number, newPage)
-
-                // Start fresh timer for the new page
-                if (!pageReadStates.getOrDefault(newPage, false)) {
-                    startPageReadTimer(newPage)
-                }
-
                 isAtBottom = false
+
+                // Check if we should mark this page as read
+                if (!pageReadStates.getOrDefault(newPage, false)) {
+                    binding.quranPager.postDelayed({
+                        checkPageReadConditions()
+                    }, 1000) // Short delay to allow page to settle
+                }
             }
 
             // Required for Mark As Read when you freshly open a new surah
@@ -363,15 +357,13 @@ class QuranReaderFragment : Fragment() {
     }
 
     private fun checkPageReadConditions() {
-        // Get current scroll state from the ViewHolder
         val recyclerView = binding.quranPager.getChildAt(0) as? RecyclerView
         val viewHolder = recyclerView?.findViewHolderForAdapterPosition(currentPagePosition) as? QuranPageAdapter.PageViewHolder
-        val isReallyAtBottom = viewHolder?.scrollTracker?.isBottomReached() ?: false
+        val isAtBottom = viewHolder?.scrollTracker?.isBottomReached() ?: false
 
         if (!pageMarked &&
             !pageReadStates.getOrDefault(currentPagePosition, false) &&
-            isReallyAtBottom &&
-            pageTimer == null &&
+            isAtBottom &&
             currentPagePosition != lastPageMarkedAsRead) {
 
             markPageAsRead(currentPagePosition)
@@ -433,23 +425,8 @@ class QuranReaderFragment : Fragment() {
 
 
     private fun handleBottomPositionChange(atBottom: Boolean) {
-        isAtBottom = atBottom
-
-        if (atBottom) {
-            // Also start timer as fallback
-            bottomTimer?.cancel()
-            bottomTimer = object : CountDownTimer(1000L, 1000L) {
-                override fun onTick(millisUntilFinished: Long) {}
-                override fun onFinish() {
-                    if (isAtBottom) {
-                        checkPageReadConditions()
-                    }
-                    bottomTimer = null
-                }
-            }.start()
-        } else {
-            bottomTimer?.cancel()
-            bottomTimer = null
+        if (atBottom && binding.quranPager.currentItem == currentPagePosition) {
+            checkPageReadConditions()
         }
     }
 
@@ -708,7 +685,7 @@ class QuranReaderFragment : Fragment() {
                     lastReadRepo.savePosition(surahNumber, ayahNumber, pageNumber, scrollY)
 
                     // 2. Update statistics
-                    val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(LocalDate.now())
+                    val currentDate = LocalDate.now().toString()
                     val existingRecord = statisticsDao.getByDate(currentDate)
 
                     if (existingRecord != null) {
