@@ -1,30 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/ayahTextView"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="16dp"
-    android:layout_marginBottom="8dp"
-    android:background="@color/primary">
-
-    <TextView
-        android:id="@+id/ayahNumberTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:textColor="@color/text_primary"
-        android:textSize="14sp"
-        android:includeFontPadding="false"
-        android:letterSpacing="0.01"
-        android:text="1" />
-
-    <TextView
-        android:id="@+id/ayahTextView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:fontFamily="@font/mushaf"
-        android:textColor="@color/text_primary"
-        android:textSize="@dimen/ayah_text_size"
-        android:layoutDirection="rtl"
-        android:textDirection="rtl" />
-    </LinearLayout>
+    android:fontFamily="@font/mushaf"
+    android:textColor="@color/text_primary"
+    android:textSize="@dimen/ayah_text_size"
+    android:layoutDirection="rtl"
+    android:textDirection="rtl"
+    android:includeFontPadding="false"
+    android:lineSpacingExtra="4dp"/>

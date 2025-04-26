@@ -348,7 +348,7 @@ class QuranReaderFragment : Fragment() {
             }
 
             private fun logReadingTime(secondsSpendReading: Int) {
-                val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(LocalDate.now())
+                val currentDate = LocalDate.now().toString();
 
                 lifecycleScope.launch {
                     val existingRecord = statisticsDao.getByDate(currentDate)
@@ -559,37 +559,51 @@ class QuranReaderFragment : Fragment() {
 
             holder.binding.pageContent.removeAllViews()
 
-            // Add each ayah to the page
-            allPages[position].forEach { range ->
-                val firstLineForSurah = fragment.getFirstLineNumberForSurah(range.surah)
-                (range.start..range.end).forEach { lineNumber ->
-                    val ayah = Ayah(
-                        surahNumber = range.surah,
-                        ayahNumber = lineNumber - firstLineForSurah + 1,
-                        text = quranLines[lineNumber - 1]
-                    )
-                    addAyahToView(holder.binding.pageContent, ayah)
-                }
-            }
+            val pageText = buildString {
+                allPages[position].forEach { range ->
+                    val firstLineForSurah = fragment.getFirstLineNumberForSurah(range.surah)
+                    (range.start..range.end).forEach { lineNumber ->
+                        val ayah = Ayah(
+                            surahNumber = range.surah,
+                            ayahNumber = lineNumber - firstLineForSurah + 1,
+                            text = quranLines[lineNumber - 1]
+                        )
 
-            // Setup scroll tracking
-            val scrollView = holder.binding.pageScrollView
-            holder.scrollTracker.attach(scrollView)
-
-            // Add this after setting up the scroll tracker:
-            if (position == fragment.binding.quranPager.currentItem) {
-                // Force initial scroll state update
-                holder.scrollTracker.onScrollStateChanged?.invoke(false)
-                // Force initial bottom check if already at bottom
-                scrollView.post {
-                    val contentHeight = scrollView.getChildAt(0)?.height ?: 0
-                    val visibleHeight = scrollView.height
-                    val atBottom = (scrollView.scrollY + visibleHeight) >= contentHeight - ScrollTracker.PIXELS_BUFFER
-                    if (atBottom) {
-                        fragment.handleBottomPositionChange(true)
+                        if (isBasmala(ayah)) {
+                            // Basmala gets special treatment
+                            append("﷽\n") // Basmala on its own line
+                            val remainingText = ayah.text.trim().removePrefix("﷽").trim()
+                            if (remainingText.isNotEmpty()) {
+                                append(fixMissingSmallStops(remainingText))
+                                append(" \u06DD${ayah.ayahNumber} ")
+                            }
+                        } else {
+                            // Normal ayah - continuous flow
+                            append(fixMissingSmallStops(ayah.text))
+                            append(" \u06DD${ayah.ayahNumber} ")
+                        }
                     }
                 }
             }
+
+            val pageView = TextView(holder.binding.pageContent.context).apply {
+                text = pageText
+                setTextAppearance(R.style.AyahTextAppearance)
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+                fontFeatureSettings = "'liga' on, 'clig' on"
+                layoutDirection = View.LAYOUT_DIRECTION_RTL
+                textDirection = View.TEXT_DIRECTION_RTL
+                includeFontPadding = false
+            }
+
+            holder.binding.pageContent.addView(pageView)
+
+            // Setup scroll tracking (keep your existing code here)
+            val scrollView = holder.binding.pageScrollView
+            holder.scrollTracker.attach(scrollView)
         }
 
         override fun onViewRecycled(holder: PageViewHolder) {
@@ -613,38 +627,45 @@ class QuranReaderFragment : Fragment() {
 
         private fun addAyahToView(container: ViewGroup, ayah: Ayah) {
             val tag = "ayah_${ayah.surahNumber}_${ayah.ayahNumber}"
+            val context = container.context
 
             if (isBasmala(ayah)) {
-                val basmalaView = LayoutInflater.from(container.context)
+                // Handle Basmala separately (centered on its own line)
+                val basmalaView = LayoutInflater.from(context)
                     .inflate(R.layout.item_basmala, container, false) as TextView
                 container.addView(basmalaView)
 
-                ayah.text.trim()
-                    .takeIf { it.isNotEmpty() }
-                    ?.let { remainingText ->
-                        val ayahBinding = ItemAyahBinding.inflate(
-                            LayoutInflater.from(container.context),
-                            container,
-                            false
-                        )
-                        ayahBinding.ayahNumberTextView.text = ayah.ayahNumber.toString()
-                        ayahBinding.ayahTextView.fontFeatureSettings = "'liga' on, 'clig' on"  // Forces ligature rendering
-                        ayahBinding.ayahTextView.text = fixMissingSmallStops(remainingText)
-                        ayahBinding.root.tag = tag
-                        container.addView(ayahBinding.root)
-                    }
+                // Add the rest of the ayah (after Basmala) without line break
+                val remainingText = ayah.text.trim().removePrefix("﷽").trim()
+                if (remainingText.isNotEmpty()) {
+                    addAyahText(container, remainingText, tag)
+                }
             } else {
-                val binding = ItemAyahBinding.inflate(
-                    LayoutInflater.from(container.context),
-                    container,
-                    false
-                )
-                binding.ayahNumberTextView.text = ayah.ayahNumber.toString()
-                binding.ayahTextView.fontFeatureSettings = "'liga' on, 'clig' on"  // Forces ligature rendering
-                binding.ayahTextView.text = fixMissingSmallStops(ayah.text)
-                binding.root.tag = tag
-                container.addView(binding.root)
+                // For normal ayaat - add directly without line break
+                addAyahText(container, ayah.text, tag, ayah.ayahNumber)
             }
+        }
+
+        private fun addAyahText(container: ViewGroup, ayahText: String, tag: String, ayahNumber: Int? = null) {
+            val ayahView = TextView(container.context).apply {
+                this.tag = tag
+                this.text = buildString {
+                    append(fixMissingSmallStops(ayahText))
+                    ayahNumber?.let { append(it) } // Small ayah number indicator
+                }
+                setTextAppearance(R.style.AyahTextAppearance)
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+                // Apply text properties
+                fontFeatureSettings = "'liga' on, 'clig' on"
+                layoutDirection = View.LAYOUT_DIRECTION_RTL
+                textDirection = View.TEXT_DIRECTION_RTL
+                includeFontPadding = false
+            }
+
+            container.addView(ayahView)
         }
 
         private fun fixMissingSmallStops(quranText: String): String {
