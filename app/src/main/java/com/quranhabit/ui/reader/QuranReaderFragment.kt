@@ -2,8 +2,18 @@ package com.quranhabit.ui.reader
 
 import ReadingTimeTracker
 import android.content.Context
+import android.graphics.Color
+import android.graphics.Typeface
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.SpannableStringBuilder
+import android.text.TextPaint
+import android.text.method.LinkMovementMethod
+import android.text.style.CharacterStyle
+import android.text.style.ClickableSpan
+import android.text.style.StyleSpan
 import android.util.Log
 import android.util.SparseIntArray
 import android.view.LayoutInflater
@@ -528,59 +538,75 @@ class QuranReaderFragment : Fragment() {
         }
 
         override fun onBindViewHolder(holder: PageViewHolder, position: Int) {
-            // Guard against invalid positions
-            if (position !in 0 until allPages.size) {
-                Log.e("PageAdapter", "Invalid position: $position")
-                return
-            }
+            if (position !in 0 until allPages.size) return
 
             holder.binding.pageContent.removeAllViews()
 
-            val pageText = buildString {
-                allPages[position].forEach { range ->
-                    val firstLineForSurah = fragment.getFirstLineNumberForSurah(range.surah)
-                    (range.start..range.end).forEach { lineNumber ->
-                        val ayah = Ayah(
-                            surahNumber = range.surah,
-                            ayahNumber = lineNumber - firstLineForSurah + 1,
-                            text = quranLines[lineNumber - 1]
-                        )
+            // Create text view with proper layout params
+            val normalText = TextView(holder.binding.root.context).apply {
+                setTextAppearance(R.style.AyahTextAppearance)
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,  // Fixed: Fully qualified constant
+                    ViewGroup.LayoutParams.WRAP_CONTENT   // Fixed: Fully qualified constant
+                )
+                layoutDirection = View.LAYOUT_DIRECTION_RTL
+                textDirection = View.TEXT_DIRECTION_RTL
+                includeFontPadding = false
+                fontFeatureSettings = "'liga' on, 'clig' on"
+            }
 
-                        if (isBasmala(ayah)) {
-                            // Basmala gets special treatment
-                            append("﷽\n") // Basmala on its own line
-                            val remainingText = ayah.text.trim().removePrefix("﷽").trim()
-                            if (remainingText.isNotEmpty()) {
-                                append(fixMissingSmallStops(remainingText))
-                                append(" \u06DD${ayah.ayahNumber} ")
-                            }
-                        } else {
-                            // Normal ayah - continuous flow
-                            append(fixMissingSmallStops(ayah.text))
-                            append(" \u06DD${ayah.ayahNumber} ")
+            // Build page content
+            val pageBuilder = StringBuilder()
+            allPages[position].forEach { range ->
+                val firstLine = fragment.getFirstLineNumberForSurah(range.surah)
+                (range.start..range.end).forEach { lineNumber ->
+                    val ayah = Ayah(
+                        surahNumber = range.surah,
+                        ayahNumber = lineNumber - firstLine + 1,
+                        text = quranLines[lineNumber - 1]
+                    )
+
+                    if (isBasmala(ayah)) {
+                        pageBuilder.append(" ﷽ ") // Basmala with proper spacing
+                        val remaining = ayah.text.trim().removePrefix("﷽")
+                        if (remaining.isNotEmpty()) {
+                            pageBuilder.append("${fixMissingSmallStops(remaining)} \u06DD${ayah.ayahNumber} ")
                         }
+                    } else {
+                        pageBuilder.append("${fixMissingSmallStops(ayah.text)} \u06DD${ayah.ayahNumber} ")
                     }
                 }
             }
 
-            val pageView = TextView(holder.binding.pageContent.context).apply {
-                text = pageText
-                setTextAppearance(R.style.AyahTextAppearance)
-                layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
+            // Apply Basmala styling
+            val pageText = pageBuilder.toString()
+            val spannable = SpannableString(pageText)
+            var basmalaIndex = pageText.indexOf("﷽")
+            while (basmalaIndex != -1) {
+                spannable.setSpan(
+                    StyleSpan(Typeface.BOLD),
+                    basmalaIndex,
+                    basmalaIndex + 1,
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
-                fontFeatureSettings = "'liga' on, 'clig' on"
-                layoutDirection = View.LAYOUT_DIRECTION_RTL
-                textDirection = View.TEXT_DIRECTION_RTL
-                includeFontPadding = false
+                basmalaIndex = pageText.indexOf("﷽", basmalaIndex + 1)
             }
 
-            holder.binding.pageContent.addView(pageView)
+            normalText.text = spannable
+            holder.binding.pageContent.addView(normalText)
 
-            // Setup scroll tracking (keep your existing code here)
-            val scrollView = holder.binding.pageScrollView
-            holder.scrollTracker.attach(scrollView)
+            // Restore scroll position
+            holder.binding.pageScrollView.post {
+                holder.binding.pageScrollView.scrollTo(0, scrollPositions.get(position, 0))
+            }
+
+            // Setup tracking
+            holder.scrollTracker.attach(holder.binding.pageScrollView)
+        }
+
+        // Helper class to preserve ayah tags
+        private class AyahTagSpan(val tag: String) : CharacterStyle() {
+            override fun updateDrawState(tp: TextPaint?) {} // No visual change
         }
 
         override fun onViewRecycled(holder: PageViewHolder) {
@@ -602,40 +628,23 @@ class QuranReaderFragment : Fragment() {
                     ayah.surahNumber != 9
         }
 
-        private fun addAyahToView(container: ViewGroup, ayah: Ayah) {
-            val tag = "ayah_${ayah.surahNumber}_${ayah.ayahNumber}"
-            val context = container.context
+        private fun addAyahText(
+            container: ViewGroup,
+            ayahText: String,
+            ayahNumber: Int,
+            surahNumber: Int
+        ) {
+            val tag = "ayah_${surahNumber}_${ayahNumber}"
+            val fixedText = fixMissingSmallStops(ayahText)
 
-            if (isBasmala(ayah)) {
-                // Handle Basmala separately (centered on its own line)
-                val basmalaView = LayoutInflater.from(context)
-                    .inflate(R.layout.item_basmala, container, false) as TextView
-                container.addView(basmalaView)
-
-                // Add the rest of the ayah (after Basmala) without line break
-                val remainingText = ayah.text.trim().removePrefix("﷽").trim()
-                if (remainingText.isNotEmpty()) {
-                    addAyahText(container, remainingText, tag)
-                }
-            } else {
-                // For normal ayaat - add directly without line break
-                addAyahText(container, ayah.text, tag, ayah.ayahNumber)
-            }
-        }
-
-        private fun addAyahText(container: ViewGroup, ayahText: String, tag: String, ayahNumber: Int? = null) {
             val ayahView = TextView(container.context).apply {
                 this.tag = tag
-                this.text = buildString {
-                    append(fixMissingSmallStops(ayahText))
-                    ayahNumber?.let { append(it) } // Small ayah number indicator
-                }
+                this.text = "$fixedText \u06DD$ayahNumber"
                 setTextAppearance(R.style.AyahTextAppearance)
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
                 )
-                // Apply text properties
                 fontFeatureSettings = "'liga' on, 'clig' on"
                 layoutDirection = View.LAYOUT_DIRECTION_RTL
                 textDirection = View.TEXT_DIRECTION_RTL
