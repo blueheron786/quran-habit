@@ -15,4 +15,4 @@
     android:text="﷽"
     android:textColor="@color/text_primary"
     android:textDirection="rtl"
-    android:textSize="60sp" />
+    android:textSize="35sp" />

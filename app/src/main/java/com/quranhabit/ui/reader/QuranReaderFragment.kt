@@ -44,9 +44,6 @@ import kotlinx.coroutines.cancelChildren
 import java.time.LocalDate
 import kotlin.math.max
 
-// Our awesome, flaky way of detecting and inserting the basmalla header
-private const val BASMALLA_TEXT = "بِسمِ ٱللَّهِ ٱلرَّحمَـٰنِ ٱلرَّحِيمِ"
-
 class QuranReaderFragment : Fragment() {
 
     private var _binding: FragmentQuranReaderBinding? = null
@@ -609,8 +606,7 @@ class QuranReaderFragment : Fragment() {
         override fun getItemCount() = allPages.size
 
         private fun isBasmala(ayah: Ayah): Boolean {
-            return ayah.text.startsWith(BASMALLA_TEXT) &&
-                    ayah.ayahNumber == 1 &&
+            return ayah.ayahNumber == 1 &&
                     ayah.surahNumber != 1 &&
                     ayah.surahNumber != 9
         }
@@ -623,8 +619,7 @@ class QuranReaderFragment : Fragment() {
                     .inflate(R.layout.item_basmala, container, false) as TextView
                 container.addView(basmalaView)
 
-                ayah.text.removePrefix(BASMALLA_TEXT)
-                    .trim()
+                ayah.text.trim()
                     .takeIf { it.isNotEmpty() }
                     ?.let { remainingText ->
                         val ayahBinding = ItemAyahBinding.inflate(
