@@ -542,21 +542,8 @@ class QuranReaderFragment : Fragment() {
 
             holder.binding.pageContent.removeAllViews()
 
-            // Create text view with proper layout params
-            val normalText = TextView(holder.binding.root.context).apply {
-                setTextAppearance(R.style.AyahTextAppearance)
-                layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,  // Fixed: Fully qualified constant
-                    ViewGroup.LayoutParams.WRAP_CONTENT   // Fixed: Fully qualified constant
-                )
-                layoutDirection = View.LAYOUT_DIRECTION_RTL
-                textDirection = View.TEXT_DIRECTION_RTL
-                includeFontPadding = false
-                fontFeatureSettings = "'liga' on, 'clig' on"
-            }
+            var currentPageTextBuilder = SpannableStringBuilder()
 
-            // Build page content
-            val pageBuilder = StringBuilder()
             allPages[position].forEach { range ->
                 val firstLine = fragment.getFirstLineNumberForSurah(range.surah)
                 (range.start..range.end).forEach { lineNumber ->
@@ -567,33 +554,35 @@ class QuranReaderFragment : Fragment() {
                     )
 
                     if (isBasmala(ayah)) {
-                        pageBuilder.append(" ﷽ ") // Basmala with proper spacing
-                        val remaining = ayah.text.trim().removePrefix("﷽")
-                        if (remaining.isNotEmpty()) {
-                            pageBuilder.append("${fixMissingSmallStops(remaining)} \u06DD${ayah.ayahNumber} ")
+                        // If there's accumulated text, add it as a TextView before the Basmala
+                        if (currentPageTextBuilder.isNotEmpty()) {
+                            addTextToPage(holder.binding.pageContent, currentPageTextBuilder)
+                            currentPageTextBuilder = SpannableStringBuilder() // Start a new builder
                         }
+
+                        // Inflate and add the basmala layout
+                        val basmalaView = LayoutInflater.from(holder.binding.root.context)
+                            .inflate(R.layout.item_basmala, holder.binding.pageContent, false)
+                        holder.binding.pageContent.addView(basmalaView)
+
+                        // If there is remaining text after Basmala in the same ayah line,
+                        // append it to the *new* builder for continuous flow with the next ayah.
+                        val remaining = ayah.text.trim().removePrefix("﷽").trim()
+                        if (remaining.isNotEmpty()) {
+                            currentPageTextBuilder.append("${fixMissingSmallStops(remaining)} \u06DD${ayah.ayahNumber} ")
+                        }
+
                     } else {
-                        pageBuilder.append("${fixMissingSmallStops(ayah.text)} \u06DD${ayah.ayahNumber} ")
+                        // Append regular ayah text to the current builder
+                        currentPageTextBuilder.append("${fixMissingSmallStops(ayah.text)} \u06DD${ayah.ayahNumber} ")
                     }
                 }
             }
 
-            // Apply Basmala styling
-            val pageText = pageBuilder.toString()
-            val spannable = SpannableString(pageText)
-            var basmalaIndex = pageText.indexOf("﷽")
-            while (basmalaIndex != -1) {
-                spannable.setSpan(
-                    StyleSpan(Typeface.BOLD),
-                    basmalaIndex,
-                    basmalaIndex + 1,
-                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
-                basmalaIndex = pageText.indexOf("﷽", basmalaIndex + 1)
+            // Add any remaining accumulated text after the loop finishes
+            if (currentPageTextBuilder.isNotEmpty()) {
+                addTextToPage(holder.binding.pageContent, currentPageTextBuilder)
             }
-
-            normalText.text = spannable
-            holder.binding.pageContent.addView(normalText)
 
             // Restore scroll position
             holder.binding.pageScrollView.post {
@@ -604,9 +593,21 @@ class QuranReaderFragment : Fragment() {
             holder.scrollTracker.attach(holder.binding.pageScrollView)
         }
 
-        // Helper class to preserve ayah tags
-        private class AyahTagSpan(val tag: String) : CharacterStyle() {
-            override fun updateDrawState(tp: TextPaint?) {} // No visual change
+        // Add this helper function to create and add TextViews from SpannableStringBuilder
+        private fun addTextToPage(container: ViewGroup, textBuilder: SpannableStringBuilder) {
+            val textView = TextView(container.context).apply {
+                setTextAppearance(R.style.AyahTextAppearance)
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+                fontFeatureSettings = "'liga' on, 'clig' on"
+                layoutDirection = View.LAYOUT_DIRECTION_RTL
+                textDirection = View.TEXT_DIRECTION_RTL
+                includeFontPadding = false
+                text = textBuilder
+            }
+            container.addView(textView)
         }
 
         override fun onViewRecycled(holder: PageViewHolder) {
