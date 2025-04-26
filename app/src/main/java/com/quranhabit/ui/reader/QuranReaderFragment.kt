@@ -35,13 +35,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 import androidx.core.content.edit
 import com.quranhabit.ui.clearBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
+import java.time.LocalDate
 import kotlin.math.max
 
 // Our awesome, flaky way of detecting and inserting the basmalla header
@@ -142,7 +142,7 @@ class QuranReaderFragment : Fragment() {
     private fun logReadingTime(seconds: Int) {
         if (seconds <= 0) return
 
-        val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(LocalDate.now())
         Log.d("ReadingTime", "Logging $seconds seconds for $currentDate")
 
         lifecycleScope.launch {
@@ -351,7 +351,7 @@ class QuranReaderFragment : Fragment() {
             }
 
             private fun logReadingTime(secondsSpendReading: Int) {
-                val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+                val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(LocalDate.now())
 
                 lifecycleScope.launch {
                     val existingRecord = statisticsDao.getByDate(currentDate)
@@ -692,7 +692,7 @@ class QuranReaderFragment : Fragment() {
                     lastReadRepo.savePosition(surahNumber, ayahNumber, pageNumber, scrollY)
 
                     // 2. Update statistics
-                    val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+                    val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(LocalDate.now())
                     val existingRecord = statisticsDao.getByDate(currentDate)
 
                     if (existingRecord != null) {

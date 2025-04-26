@@ -1,14 +1,8 @@
 package com.quranhabit.utils
 
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.TimeZone
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 object DateUtils {
-    private val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
-        timeZone = TimeZone.getTimeZone("UTC") // Force UTC timezone
-    }
-
-    fun getTodayDate(): String = formatter.format(Date())
+    fun getTodayDate(): String = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
 }
