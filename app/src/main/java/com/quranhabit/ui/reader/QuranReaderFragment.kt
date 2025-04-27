@@ -565,9 +565,7 @@ class QuranReaderFragment : Fragment() {
                             .inflate(R.layout.item_basmala, holder.binding.pageContent, false)
                         holder.binding.pageContent.addView(basmalaView)
 
-                        // If there is remaining text after Basmala in the same ayah line,
-                        // append it to the *new* builder for continuous flow with the next ayah.
-                        val remaining = ayah.text.trim().removePrefix("﷽").trim()
+                        val remaining = ayah.text.trim().removePrefix("بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ").trim()
                         if (remaining.isNotEmpty()) {
                             currentPageTextBuilder.append("${fixMissingSmallStops(remaining)} \u06DD${ayah.ayahNumber} ")
                         }
